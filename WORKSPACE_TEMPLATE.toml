@@ -1,0 +1,51 @@
+# 📋 Template de Workspace Cargo.toml para Projetos Solana
+# Baseado nas melhores práticas implementadas no GMC Ecosystem
+
+[workspace]
+members = [
+    "programs/contract_1",
+    "programs/contract_2", 
+    "programs/contract_3",
+    # Adicione seus contratos aqui
+]
+resolver = "2"
+
+# 🔧 Dependências centralizadas - Uma única fonte de verdade
+[workspace.dependencies]
+# Anchor Framework - Versões fixas para estabilidade
+anchor-lang = { version = "=0.31.1", features = ["init-if-needed"] }
+anchor-spl = "=0.31.1"
+
+# SPL Token - Use versões específicas em produção
+spl-token = { version = "=4.0.0", features = ["no-entrypoint"] }
+spl-token-2022 = { version = "=6.0.0", features = ["no-entrypoint"] }
+spl-associated-token-account = "=6.0.0"
+
+# Utilitários comuns
+borsh = "=0.10.3"
+solana-program = "=2.3.0"
+
+# 🔧 Patches para resolver conflitos conhecidos
+[patch.crates-io]
+# Exemplo: forçar versão específica para evitar conflitos
+# proc-macro2 = "=1.0.85"  # Descomente se necessário
+
+# 🚀 Configurações de build otimizadas
+[profile.release]
+overflow-checks = true        # Segurança em produção
+lto = "fat"                  # Link Time Optimization
+codegen-units = 1            # Otimização máxima
+
+[profile.release.build-override]
+opt-level = 3                # Otimização máxima
+incremental = false          # Build completo
+codegen-units = 1
+
+# 🧪 Configurações para testes
+[profile.test]
+overflow-checks = true       # Manter verificações em testes
+
+# 📝 Configurações para desenvolvimento
+[profile.dev]
+debug = true                 # Símbolos de debug
+overflow-checks = true       # Verificações em desenvolvimento 

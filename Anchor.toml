@@ -1,0 +1,23 @@
+[features]
+seeds = false
+skip-lint = false
+
+[toolchain]
+anchor_version = "0.31.1"
+
+[programs.localnet]
+gmc_token = "9cxPbpRkTkoWqs2gj6B84ojM41DUfLWKodmUjd5KaYCx"
+gmc_staking = "9xef742EHoWyB6eJFeY9qD8nsVadsXvLByL8J6Lhvtz1"
+gmc_vesting = "6PSoDRr6cMMY2db3d1y37tcLNp8uWFWd2kH7CjXqey7U"
+gmc_ranking = "CUM2m3SXR1S8Yg8rPBUVv7fWEN2n5JzR3W3vA1Xv2b7b"
+gmc_treasury = "GMCm26i3oB35nCHfswhN5aXgx1sxyxxa9f5c4hL3p8v"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "Localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/04_ranking.test.ts" 

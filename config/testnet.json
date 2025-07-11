@@ -1,0 +1,37 @@
+{
+  "network": "testnet",
+  "rpcUrl": "https://api.testnet.solana.com",
+  "deployerKeypair": "./keys/deployer-testnet.json",
+  "treasuryKeypair": "./keys/treasury-testnet.json",
+  "tokenomics": {
+    "totalSupply": 100000000,
+    "decimals": 9,
+    "distribution": {
+      "stakingPool": 70000000,
+      "presale": 8000000,
+      "strategicReserve": 10000000,
+      "treasury": 2000000,
+      "marketing": 6000000,
+      "airdrop": 2000000,
+      "team": 2000000
+    }
+  },
+  "vesting": {
+    "team": {
+      "amount": 2000000,
+      "cliff": 31536000,
+      "duration": 126144000
+    },
+    "strategicReserve": {
+      "amount": 10000000,
+      "cliff": 0,
+      "duration": 157680000
+    }
+  },
+  "staking": {
+    "minLongTermStake": 100,
+    "minFlexibleStake": 50,
+    "baseLongTermApy": 1000,
+    "flexibleApy": 500
+  }
+} 
