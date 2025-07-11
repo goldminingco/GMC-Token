@@ -18,17 +18,6 @@ solana-tools.tar.bz2
 *.tar.bz2
 *.tar.gz
 
-# Documentos de controle de desenvolvimento
-Docs/COMPILATION_ANALYSIS.md
-Docs/GMC_PROJECT_ANALYSIS_REPORT.md
-Docs/MIGRATION_STRATEGY.md
-Docs/SOLUTION_SUMMARY.md
-Docs/TABELA_FINAL_REGRAS_STAKING.md
-Docs/TABELA_MELHORADA_REGRAS_STAKING.md
-Docs/requisitos.md
-Docs/tabela.md
-Docs/task.md
-
 # Large files and build artifacts
 *.so
 *.dylib

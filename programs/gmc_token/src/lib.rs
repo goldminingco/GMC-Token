@@ -4,13 +4,13 @@
 // EN: This contract manages the GMC token using SPL Token-2022 standard with transfer fees.
 //     It includes functionality for:
 //     - Token initialization with transfer fee extension
-//     - Initial supply minting and authority management
+//     - Initial supply minting of 100M GMC and authority management
 //     - Fee collection and distribution according to tokenomics
 //     - Burn mechanism for deflationary economics
 // PT: Este contrato gerencia o token GMC usando o padrão SPL Token-2022 com taxas de transferência.
 //     Inclui funcionalidade para:
 //     - Inicialização do token com extensão de taxa de transferência
-//     - Cunhagem do fornecimento inicial e gerenciamento de autoridade
+//     - Cunhagem do fornecimento inicial de 100M GMC e gerenciamento de autoridade
 //     - Coleta e distribuição de taxas de acordo com tokenomics
 //     - Mecanismo de queima para economia deflacionária
 // ---
