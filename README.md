@@ -46,6 +46,79 @@ graph TD
     C -->|"Distributes Rewards"| B
 ```
 
+## 💰 Oportunidades de Ganhos para Usuários
+
+Os usuários do ecossistema GMC têm múltiplas oportunidades de ganhos, combinando recompensas em GMC (com potencial de valorização) e recompensas em USDT (valor estável). O sistema foi projetado para recompensar diferentes tipos de participação e estratégias de investimento.
+
+```mermaid
+graph TD
+    subgraph "💰 GANHOS DOS USUÁRIOS GMC"
+        A[👤 Usuário GMC] --> B{Escolha de Estratégia}
+        
+        B --> C[🔒 Staking Long-term<br/>12 meses]
+        B --> D[🌊 Staking Flexible<br/>30 dias]
+        B --> E[🤝 Sistema de Afiliados<br/>6 níveis]
+        B --> F[🏆 Competições Ranking<br/>Mensal/Anual]
+        
+        C --> G[💎 Ganhos Base<br/>10% APY GMC]
+        C --> H[🔥 Burn-for-Boost<br/>Até 280% APY]
+        C --> I[🚀 Boost Afiliados<br/>Até +50% APY]
+        
+        D --> J[💰 Ganhos Base<br/>5% APY GMC]
+        D --> K[🚀 Boost Afiliados<br/>Até +35% APY]
+        
+        E --> L[📊 Nível 1: 20%<br/>Referência Direta]
+        E --> M[📊 Nível 2: 15%<br/>Sub-referência]
+        E --> N[📊 Níveis 3-6<br/>8%, 4%, 2%, 1%]
+        
+        F --> O[🏅 Ranking Mensal<br/>Top 21 usuários]
+        F --> P[🏆 Ranking Anual<br/>Top 12 usuários]
+        
+        G --> Q[💎 Recompensas GMC<br/>Valor em Apreciação]
+        H --> Q
+        I --> Q
+        J --> Q
+        K --> Q
+        
+        L --> R[💵 Ganhos USDT<br/>Valor Estável]
+        M --> R
+        N --> R
+        O --> R
+        P --> R
+        
+        Q --> S[📈 Ganhos Totais<br/>GMC + USDT]
+        R --> S
+        
+        style A fill:#FFD700,stroke:#333,stroke-width:3px
+        style S fill:#32CD32,stroke:#333,stroke-width:3px
+        style Q fill:#4169E1,stroke:#333,stroke-width:2px
+        style R fill:#228B22,stroke:#333,stroke-width:2px
+        style C fill:#8A2BE2,stroke:#333,stroke-width:2px
+        style D fill:#20B2AA,stroke:#333,stroke-width:2px
+        style E fill:#FF6347,stroke:#333,stroke-width:2px
+        style F fill:#FF8C00,stroke:#333,stroke-width:2px
+    end
+```
+
+### 🎯 Resumo das Oportunidades de Ganho
+
+| Tipo de Ganho | Recompensa | Moeda | Potencial Máximo |
+|---------------|------------|-------|------------------|
+| **Staking Long-term** | 10%-280% APY | GMC | Até 280% APY com burn-for-boost |
+| **Staking Flexible** | 5%-70% APY | GMC | Até 70% APY com afiliados |
+| **Afiliados Nível 1** | 20% das recompensas | USDT | Sem limite |
+| **Afiliados Nível 2** | 15% das recompensas | USDT | Sem limite |
+| **Afiliados Níveis 3-6** | 8%, 4%, 2%, 1% | USDT | Sem limite |
+| **Ranking Mensal** | Pool variável | USDT | Top 21 usuários |
+| **Ranking Anual** | Pool maior | USDT | Top 12 usuários |
+
+### 💡 Estratégias de Maximização de Ganhos
+
+1. **🔒 Estratégia Long-term**: Stake por 12 meses + burn-for-boost + afiliados = até 330% APY
+2. **🌊 Estratégia Flexible**: Stake flexível + afiliados ativos = até 105% APY
+3. **🤝 Estratégia Afiliados**: Foco na construção de rede = ganhos recorrentes em USDT
+4. **🏆 Estratégia Competitiva**: Participação ativa + volume alto = premiações ranking
+
 ## 💰 Tokenomics
 
 ### Total Supply: 100,000,000 GMC
