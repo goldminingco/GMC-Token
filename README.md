@@ -48,16 +48,16 @@ graph TD
 
 ## 💰 Tokenomics
 
-### Total Supply: 1,000,000,000 GMC
+### Total Supply: 100,000,000 GMC
 
 | Category | Amount | Percentage | Vesting |
 |-----------|------------|-------------|---------|
-| **Initial Circulation** | 200,000,000 | 20% | Immediate |
-| **Staking Rewards** | 300,000,000 | 30% | 5 years |
-| **Ranking Rewards** | 100,000,000 | 10% | 3 years |
-| **Team & Advisors** | 150,000,000 | 15% | 4 years (1-year cliff) |
-| **Strategic Reserve** | 200,000,000 | 20% | 5 years |
-| **Liquidity & Marketing** | 50,000,000 | 5% | 2 years |
+| **Initial Circulation** | 20,000,000 | 20% | Immediate |
+| **Staking Rewards** | 30,000,000 | 30% | 5 years |
+| **Ranking Rewards** | 10,000,000 | 10% | 3 years |
+| **Team & Advisors** | 15,000,000 | 15% | 4 years (1-year cliff) |
+| **Strategic Reserve** | 20,000,000 | 20% | 5 years |
+| **Liquidity & Marketing** | 5,000,000 | 5% | 2 years |
 
 ### Deflationary Mechanics
 
@@ -317,6 +317,26 @@ npm run dev
 ```
 
 ## 📚 Documentation
+
+### 🎯 Frontend Development Documentation
+
+Complete documentation for frontend developers with all endpoints, data structures, and integration flows:
+
+- **[Frontend Endpoints Guide](./Docs/FRONTEND_ENDPOINTS_GUIDE.md)** - Complete guide with all endpoints and data structures
+- **[System Parameters](./Docs/SYSTEM_PARAMETERS.md)** - Complete system parameters and business rules
+- **[Executive Summary](./Docs/EXECUTIVE_SUMMARY.md)** - Executive summary of the project and architecture
+- **[Documentation Index](./Docs/README_FRONTEND_DOCS.md)** - Navigation index for all documentation
+
+### 📊 Visual Resources
+- **Architecture Diagram** - Overview of the 5 smart contracts
+- **Flow Diagram** - User journey and data flows
+- **Data Diagram** - Data structure and relationships
+
+### 🔧 Technical Resources
+- **34 Endpoints** documented (Token: 4, Staking: 12, Ranking: 10, Treasury: 3, Vesting: 5)
+- **TypeScript Structures** for all data types
+- **Utility Functions** for calculations and formatting
+- **Security Guides** and performance optimization
 
 ### Additional Resources
 - **[Whitepaper](./Docs/WHITEPAPER_EN.md)**: Complete technical documentation
