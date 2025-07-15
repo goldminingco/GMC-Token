@@ -24,6 +24,7 @@ use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 // Importar o novo módulo de constantes
 mod constants;
 use constants::*;
+mod affiliate;
 
 declare_id!("11111111111111111111111111111112");
 
@@ -97,22 +98,26 @@ pub mod gmc_staking {
     ) -> Result<()> {
         let user_stake_info = &mut ctx.accounts.user_stake_info;
         
-        // Verificar se o referrer já foi definido
+        // Check if the referrer is already set
         require!(
             user_stake_info.referrer == Pubkey::default(),
             StakingError::ReferrerAlreadySet
         );
         
-        // Verificar se o usuário não está tentando referenciar a si mesmo
+        // Check if the user is trying to refer themselves
         require!(
             referrer != ctx.accounts.user.key(),
             StakingError::CannotReferSelf
         );
         
-        // Definir o referrer (validação de profundidade simplificada)
+        // Set the referrer
         user_stake_info.referrer = referrer;
         user_stake_info.owner = ctx.accounts.user.key();
         
+        // Add the user to the referrer's children list
+        let referrer_stake_info = &mut ctx.accounts.referrer_stake_info;
+        referrer_stake_info.children.push(ctx.accounts.user.key());
+
         msg!("👥 Referrer registered: {} -> {}", ctx.accounts.user.key(), referrer);
         Ok(())
     }
@@ -339,23 +344,9 @@ pub mod gmc_staking {
             StakingError::InsufficientUsdtBalance
         );
         
-        let usdt_team_amount = BURN_FEE_USDT
-            .checked_mul(40)
-            .ok_or(StakingError::ArithmeticOverflow)?
-            .checked_div(100)
-            .ok_or(StakingError::ArithmeticOverflow)?;
-            
-        let usdt_staking_amount = BURN_FEE_USDT
-            .checked_mul(50)
-            .ok_or(StakingError::ArithmeticOverflow)?
-            .checked_div(100)
-            .ok_or(StakingError::ArithmeticOverflow)?;
-            
-        let usdt_ranking_amount = BURN_FEE_USDT
-            .checked_sub(usdt_team_amount)
-            .ok_or(StakingError::ArithmeticOverflow)?
-            .checked_sub(usdt_staking_amount)
-            .ok_or(StakingError::ArithmeticOverflow)?;
+        let usdt_team_amount = basis_points_to_amount(BURN_FEE_USDT, BURN_BOOST_FEE_TEAM_BASIS_POINTS);
+        let usdt_staking_amount = basis_points_to_amount(BURN_FEE_USDT, BURN_BOOST_FEE_STAKING_BASIS_POINTS);
+        let usdt_ranking_amount = basis_points_to_amount(BURN_FEE_USDT, BURN_BOOST_FEE_RANKING_BASIS_POINTS);
         
         let transfer_team_ctx = CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
@@ -480,13 +471,10 @@ pub mod gmc_staking {
     ) -> Result<u8> {
         let user_stake_info = &ctx.accounts.user_stake_info;
         
-        // Implementação simplificada - retorna boost fixo se tem referrer
-        let affiliate_boost = if user_stake_info.referrer != Pubkey::default() {
-            // Boost básico de 5% se tem referrer
-            5u8
-        } else {
-            0u8
-        };
+        let affiliate_boost = affiliate::calculate_affiliate_boost(
+            user_stake_info,
+            &ctx.remaining_accounts,
+        )?;
         
         msg!("🎯 Affiliate boost calculated: {}%", affiliate_boost);
         Ok(affiliate_boost)
@@ -576,11 +564,53 @@ pub mod gmc_staking {
             StakingError::InvalidStakeType
         );
         
-        // Lógica de penalidade simplificada para o exemplo
-        let capital_penalty = stake_position.principal_amount / 2; // 50%
+        // USDT fee
+        require!(
+            ctx.accounts.user_usdt_account.amount >= EMERGENCY_UNSTAKE_USDT_FEE,
+            StakingError::InsufficientUsdtBalance
+        );
+
+        let usdt_team_amount = basis_points_to_amount(EMERGENCY_UNSTAKE_USDT_FEE, FEE_DIST_TEAM_40);
+        let usdt_staking_amount = basis_points_to_amount(EMERGENCY_UNSTAKE_USDT_FEE, FEE_DIST_STAKING_40);
+        let usdt_ranking_amount = basis_points_to_amount(EMERGENCY_UNSTAKE_USDT_FEE, FEE_DIST_RANKING_20);
+
+        let transfer_team_ctx = CpiContext::new(
+            ctx.accounts.token_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.user_usdt_account.to_account_info(),
+                to: ctx.accounts.team_usdt_account.to_account_info(),
+                authority: ctx.accounts.user.to_account_info(),
+            },
+        );
+        token::transfer(transfer_team_ctx, usdt_team_amount)?;
+
+        let transfer_staking_ctx = CpiContext::new(
+            ctx.accounts.token_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.user_usdt_account.to_account_info(),
+                to: ctx.accounts.staking_usdt_vault.to_account_info(),
+                authority: ctx.accounts.user.to_account_info(),
+            },
+        );
+        token::transfer(transfer_staking_ctx, usdt_staking_amount)?;
+
+        let transfer_ranking_ctx = CpiContext::new(
+            ctx.accounts.token_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.user_usdt_account.to_account_info(),
+                to: ctx.accounts.ranking_usdt_account.to_account_info(),
+                authority: ctx.accounts.user.to_account_info(),
+            },
+        );
+        token::transfer(transfer_ranking_ctx, usdt_ranking_amount)?;
+
+        // GMC penalty
+        let capital_penalty = basis_points_to_amount(stake_position.principal_amount, EMERGENCY_UNSTAKE_CAPITAL_PENALTY_BASIS_POINTS);
         let amount_to_return = stake_position.principal_amount - capital_penalty;
+
+        // TODO: Calculate interest penalty
         
-        // Transferir valor restante para o usuário
+        // Transfer remaining amount to user
         let seeds = &[STAKING_VAULT_SEED, &[ctx.bumps.staking_vault]];
         let signer = &[&seeds[..]];
 
@@ -597,7 +627,7 @@ pub mod gmc_staking {
         
         stake_position.is_active = false;
 
-        // ✅ DECREMENTAR CONTADOR DE POSIÇÕES ATIVAS
+        // Decrement active positions counter
         let user_stake_info = &mut ctx.accounts.user_stake_info;
         user_stake_info.active_positions = user_stake_info.active_positions.checked_sub(1).ok_or(StakingError::ArithmeticOverflow)?;
         
@@ -634,16 +664,19 @@ pub mod gmc_staking {
         let stake_position = &mut ctx.accounts.stake_position;
         require!(stake_position.principal_amount >= amount_to_withdraw, StakingError::InsufficientBalance);
 
-        // Lógica de saque
-        let fee = amount_to_withdraw / 40; // 2.5%
+        let fee = basis_points_to_amount(amount_to_withdraw, FLEXIBLE_CANCELLATION_FEE_BASIS_POINTS);
         let final_amount = amount_to_withdraw - fee;
         
         stake_position.principal_amount -= amount_to_withdraw;
 
+        let team_fee = basis_points_to_amount(fee, CANCELLATION_FEE_TEAM_BASIS_POINTS);
+        let staking_fee = basis_points_to_amount(fee, CANCELLATION_FEE_STAKING_BASIS_POINTS);
+        let ranking_fee = basis_points_to_amount(fee, CANCELLATION_FEE_RANKING_BASIS_POINTS);
+
         let seeds = &[STAKING_VAULT_SEED, &[ctx.bumps.staking_vault]];
         let signer = &[&seeds[..]];
 
-        let transfer_ctx = CpiContext::new_with_signer(
+        let transfer_user_ctx = CpiContext::new_with_signer(
             ctx.accounts.token_program.to_account_info(),
             Transfer {
                 from: ctx.accounts.staking_vault.to_account_info(),
@@ -652,11 +685,43 @@ pub mod gmc_staking {
             },
             signer
         );
-        token::transfer(transfer_ctx, final_amount)?;
+        token::transfer(transfer_user_ctx, final_amount)?;
+
+        let transfer_team_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.staking_vault.to_account_info(),
+                to: ctx.accounts.team_token_account.to_account_info(),
+                authority: ctx.accounts.staking_vault.to_account_info(),
+            },
+            signer
+        );
+        token::transfer(transfer_team_ctx, team_fee)?;
+
+        let transfer_staking_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.staking_vault.to_account_info(),
+                to: ctx.accounts.staking_fund_token_account.to_account_info(),
+                authority: ctx.accounts.staking_vault.to_account_info(),
+            },
+            signer
+        );
+        token::transfer(transfer_staking_ctx, staking_fee)?;
+
+        let transfer_ranking_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.staking_vault.to_account_info(),
+                to: ctx.accounts.ranking_fund_token_account.to_account_info(),
+                authority: ctx.accounts.staking_vault.to_account_info(),
+            },
+            signer
+        );
+        token::transfer(transfer_ranking_ctx, ranking_fee)?;
 
         if stake_position.principal_amount == 0 {
             stake_position.is_active = false;
-            // ✅ DECREMENTAR CONTADOR SE A POSIÇÃO FOR FECHADA
             let user_stake_info = &mut ctx.accounts.user_stake_info;
             user_stake_info.active_positions = user_stake_info.active_positions.checked_sub(1).ok_or(StakingError::ArithmeticOverflow)?;
         }
@@ -668,8 +733,88 @@ pub mod gmc_staking {
         Ok(())
     }
 
-    // --- Métodos Privados ---
-    // Removida função _calculate_current_apy - usando função externa
+    pub fn claim_rewards(ctx: Context<ClaimRewards>) -> Result<()> {
+        let stake_position = &mut ctx.accounts.stake_position;
+        require!(stake_position.is_active, StakingError::PositionNotActive);
+
+        let current_time = Clock::get()?.unix_timestamp;
+        let elapsed_time = current_time - stake_position.last_reward_claim_timestamp;
+
+        require!(elapsed_time >= REWARD_INTERVAL, StakingError::InvalidAmount);
+
+        let apy = calculate_current_apy_simple(stake_position)?;
+        let rewards = (stake_position.principal_amount as u128)
+            .checked_mul(apy as u128)
+            .ok_or(StakingError::ArithmeticOverflow)?
+            .checked_mul(elapsed_time as u128)
+            .ok_or(StakingError::ArithmeticOverflow)?
+            .checked_div(365 * 24 * 60 * 60 * 100)
+            .ok_or(StakingError::ArithmeticOverflow)? as u64;
+
+        let fee = basis_points_to_amount(rewards, REWARD_CLAIM_FEE_BASIS_POINTS);
+        let final_rewards = rewards - fee;
+
+        let burn_fee = basis_points_to_amount(fee, FEE_DIST_BURN_40_REWARD);
+        let staking_fee = basis_points_to_amount(fee, FEE_DIST_STAKING_50_REWARD);
+        let ranking_fee = basis_points_to_amount(fee, FEE_DIST_RANKING_10_REWARD);
+
+        let seeds = &[STAKING_VAULT_SEED, &[ctx.bumps.staking_vault]];
+        let signer = &[&seeds[..]];
+
+        let transfer_user_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.staking_vault.to_account_info(),
+                to: ctx.accounts.user_token_account.to_account_info(),
+                authority: ctx.accounts.staking_vault.to_account_info(),
+            },
+            signer
+        );
+        token::transfer(transfer_user_ctx, final_rewards)?;
+
+        let transfer_burn_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.staking_vault.to_account_info(),
+                to: ctx.accounts.burn_address_account.to_account_info(),
+                authority: ctx.accounts.staking_vault.to_account_info(),
+            },
+            signer
+        );
+        token::transfer(transfer_burn_ctx, burn_fee)?;
+
+        let transfer_staking_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.staking_vault.to_account_info(),
+                to: ctx.accounts.staking_fund_token_account.to_account_info(),
+                authority: ctx.accounts.staking_vault.to_account_info(),
+            },
+            signer
+        );
+        token::transfer(transfer_staking_ctx, staking_fee)?;
+
+        let transfer_ranking_ctx = CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            Transfer {
+                from: ctx.accounts.staking_vault.to_account_info(),
+                to: ctx.accounts.ranking_fund_token_account.to_account_info(),
+                authority: ctx.accounts.staking_vault.to_account_info(),
+            },
+            signer
+        );
+        token::transfer(transfer_ranking_ctx, ranking_fee)?;
+
+        stake_position.last_reward_claim_timestamp = current_time;
+
+        msg!("✅ Rewards claimed: {} GMC", final_rewards);
+        Ok(())
+    }
+
+    pub fn claim_usdt_rewards(ctx: Context<ClaimUsdtRewards>) -> Result<()> {
+        // TODO: Implement USDT reward calculation
+        Ok(())
+    }
 }
 
 /// ## 🇧🇷 Calcula o APY atual de uma posição de staking.
@@ -741,11 +886,12 @@ pub struct UserStakeInfo {
     pub owner: Pubkey,
     pub referrer: Pubkey,
     pub total_positions: u64,
-    pub active_positions: u8, // ✅ NOVO CAMPO
+    pub active_positions: u8,
+    pub children: Vec<Pubkey>,
 }
 
 impl UserStakeInfo {
-    pub const LEN: usize = 8 + 32 + 32 + 8 + 1; // Adicionado 1 byte para active_positions
+    pub const LEN: usize = 8 + 32 + 32 + 8 + 1 + 4 + 32 * 10; // Max 10 children
 }
 
 #[account]
@@ -809,6 +955,13 @@ pub struct RegisterReferrer<'info> {
     )]
     pub user_stake_info: Account<'info, UserStakeInfo>,
     
+    #[account(
+        mut,
+        seeds = [USER_STAKE_INFO_SEED, referrer_stake_info.owner.as_ref()],
+        bump
+    )]
+    pub referrer_stake_info: Account<'info, UserStakeInfo>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -1023,7 +1176,15 @@ pub struct EmergencyUnstakeLong<'info> {
     #[account(mut)]
     pub user_token_account: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub burn_address_account: Account<'info, TokenAccount>, // Exemplo, pode ser outro destino
+    pub user_usdt_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub team_usdt_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub staking_usdt_vault: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub ranking_usdt_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub burn_address_account: Account<'info, TokenAccount>,
     #[account(mut, seeds = [GLOBAL_STATE_SEED], bump)]
     pub global_state: Account<'info, GlobalState>,
     pub token_program: Program<'info, Token>,
@@ -1050,7 +1211,11 @@ pub struct WithdrawFlexible<'info> {
     #[account(mut)]
     pub user_token_account: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub team_account: SystemAccount<'info>, // Exemplo, para receber taxas
+    pub team_token_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub staking_fund_token_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub ranking_fund_token_account: Account<'info, TokenAccount>,
     #[account(mut, seeds = [GLOBAL_STATE_SEED], bump)]
     pub global_state: Account<'info, GlobalState>,
     pub token_program: Program<'info, Token>,
@@ -1074,6 +1239,48 @@ pub struct AffiliateBoostEvent {
     pub affiliate_boost: u8,
     pub total_power: u8,
     pub new_apy: u16,
+}
+
+#[derive(Accounts)]
+pub struct ClaimRewards<'info> {
+    #[account(mut)]
+    pub user: Signer<'info>,
+    #[account(mut)]
+    pub stake_position: Account<'info, StakePosition>,
+    #[account(
+        mut,
+        seeds = [STAKING_VAULT_SEED],
+        bump
+    )]
+    pub staking_vault: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub user_token_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub burn_address_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub staking_fund_token_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub ranking_fund_token_account: Account<'info, TokenAccount>,
+    pub token_program: Program<'info, Token>,
+}
+
+#[derive(Accounts)]
+pub struct ClaimUsdtRewards<'info> {
+    #[account(mut)]
+    pub user: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [STAKING_VAULT_SEED],
+        bump
+    )]
+    pub staking_usdt_vault: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub user_usdt_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub team_usdt_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub ranking_usdt_account: Account<'info, TokenAccount>,
+    pub token_program: Program<'info, Token>,
 }
 
 // Erros customizados
@@ -1129,4 +1336,4 @@ pub enum StakingError {
 
     #[msg("The lock period for this stake is not over yet.")]
     LockPeriodNotOver,
-} 
+}

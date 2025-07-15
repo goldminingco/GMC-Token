@@ -3,7 +3,7 @@ seeds = false
 skip-lint = false
 
 [toolchain]
-anchor_version = "0.31.1"
+anchor_version = "0.31.2"
 
 [programs.localnet]
 gmc_token = "C1a81cxYesXaM81DjXN584mpLXssJTcCFci9udi3CTRf"
