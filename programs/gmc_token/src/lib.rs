@@ -17,7 +17,7 @@
 
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
-use anchor_spl::token_interface::{Mint, TokenAccount, Token2022, transfer_checked, TransferChecked};
+use anchor_spl::token_interface::{Mint, TokenAccount, Token2022};
 use spl_token_2022::{
     extension::transfer_fee::instruction::initialize_transfer_fee_config,
     instruction::{initialize_mint, AuthorityType},
@@ -403,4 +403,4 @@ pub enum TokenError {
     // PT: Lançado quando há um erro nos cálculos de distribuição.
     #[msg("Distribution calculation error")]
     DistributionError,
-} 
+}

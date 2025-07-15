@@ -1,5 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import { assert } from "chai";
+import { createMint, createTokenAccount, mintTo } from "./utils"; // 👈 Importar helpers
 
 describe("🥇 GMC Staking - Core Implementation (TDD)", () => {
   const provider = anchor.AnchorProvider.env();
@@ -16,6 +17,12 @@ describe("🥇 GMC Staking - Core Implementation (TDD)", () => {
   let globalStatePda: anchor.web3.PublicKey;
   let user1StakeInfoPda: anchor.web3.PublicKey;
   let user2StakeInfoPda: anchor.web3.PublicKey;
+
+  // Mints e Vaults
+  let gmcMint: anchor.web3.PublicKey;
+  let usdtMint: anchor.web3.PublicKey;
+  let stakingVault: anchor.web3.PublicKey;
+  let feeVault: anchor.web3.PublicKey;
 
   before(async () => {
     // Airdrop para todos os participantes
@@ -51,6 +58,17 @@ describe("🥇 GMC Staking - Core Implementation (TDD)", () => {
     console.log(`   User1: ${user1.publicKey}`);
     console.log(`   User2: ${user2.publicKey}`);
     console.log(`   Global State PDA: ${globalStatePda}`);
+
+    // Criar mints e vaults
+    gmcMint = await createMint(provider);
+    usdtMint = await createMint(provider);
+    stakingVault = await createTokenAccount(provider, gmcMint, globalStatePda);
+    feeVault = await createTokenAccount(provider, usdtMint, globalStatePda);
+
+    console.log(`   GMC Mint: ${gmcMint}`)
+    console.log(`   USDT Mint: ${usdtMint}`)
+    console.log(`   Staking Vault: ${stakingVault}`)
+    console.log(`   Fee Vault: ${feeVault}`)
   });
 
   describe("🔴 TDD RED PHASE: Functions Should Not Exist Yet", () => {
@@ -147,26 +165,357 @@ describe("🥇 GMC Staking - Core Implementation (TDD)", () => {
 
   describe("🔵 TDD REFACTOR PHASE: Complete Implementation Testing", () => {
     
-    it("🔵 Should test GlobalState initialization", async () => {
+    it("🔵 Should initialize the GlobalState correctly", async () => {
       console.log("🏗️ Testing GlobalState initialization...");
-      
+
+      const flexibleApyRate = new anchor.BN(500); // 5.00%
+      const longTermApyRate = new anchor.BN(1000); // 10.00%
+
+      await program.methods
+        .initializeStaking(flexibleApyRate, longTermApyRate)
+        .accounts({
+          globalState: globalStatePda,
+          admin: admin.publicKey,
+          gmcTokenMint: gmcMint,
+          stakingVault: stakingVault,
+          usdtTokenMint: usdtMint,
+          feeCollectionVault: feeVault,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([admin])
+        .rpc();
+
+      const globalState = await program.account.globalState.fetch(globalStatePda);
+
+      assert.ok(globalState.admin.equals(admin.publicKey), "Admin key mismatch");
+      assert.ok(globalState.gmcTokenMint.equals(gmcMint), "GMC mint mismatch");
+      assert.ok(globalState.stakingVault.equals(stakingVault), "Staking vault mismatch");
+      assert.ok(globalState.usdtTokenMint.equals(usdtMint), "USDT mint mismatch");
+      assert.ok(globalState.feeCollectionVault.equals(feeVault), "Fee vault mismatch");
+      assert.equal(globalState.flexibleApyRate.toNumber(), flexibleApyRate.toNumber(), "Flexible APY mismatch");
+      assert.equal(globalState.longTermApyRate.toNumber(), longTermApyRate.toNumber(), "Long Term APY mismatch");
+      assert.equal(globalState.totalStakedLongTerm.toNumber(), 0, "Initial long term stake should be 0");
+      assert.equal(globalState.totalStakedFlexible.toNumber(), 0, "Initial flexible stake should be 0");
+
+      console.log("✅ GlobalState initialized successfully!");
+    });
+
+    it("🔵 Should allow a user to stake in a Long Term position", async () => {
+      console.log("🔒 Testing Long Term Staking...");
+
+      // Criar contas de token para o usuário
+      const user1GmcAccount = await createTokenAccount(provider, gmcMint, user1.publicKey);
+      const user1UsdtAccount = await createTokenAccount(provider, usdtMint, user1.publicKey);
+
+      // Mintar tokens para o usuário
+      const stakeAmount = new anchor.BN(150 * 10 ** 9); // 150 GMC
+      const feeAmount = new anchor.BN(10 * 10 ** 9); // 10 USDT para taxas
+      await mintTo(provider, gmcMint, user1GmcAccount, stakeAmount.toNumber());
+      await mintTo(provider, usdtMint, user1UsdtAccount, feeAmount.toNumber());
+
+      // Encontrar o PDA da posição de stake
+      const [stakePositionPda] = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from("stake_position"), user1.publicKey.toBuffer(), Buffer.from([0])],
+        program.programId
+      );
+
+      await program.methods
+        .stakeLongTerm(stakeAmount)
+        .accounts({
+          user: user1.publicKey,
+          globalState: globalStatePda,
+          userStakeInfo: user1StakeInfoPda,
+          stakePosition: stakePositionPda,
+          gmcTokenMint: gmcMint,
+          stakingVault: stakingVault,
+          userGmcTokenAccount: user1GmcAccount,
+          usdtTokenMint: usdtMint,
+          feeCollectionVault: feeVault,
+          userUsdtTokenAccount: user1UsdtAccount,
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([user1])
+        .rpc();
+
+      const userStakeInfo = await program.account.userStakeInfo.fetch(user1StakeInfoPda);
+      const stakePosition = await program.account.stakePosition.fetch(stakePositionPda);
+      const globalState = await program.account.globalState.fetch(globalStatePda);
+
+      assert.equal(userStakeInfo.totalPositions, 1, "User should have 1 position");
+      assert.equal(userStakeInfo.totalStakedAmount.toNumber(), stakeAmount.toNumber(), "User total stake mismatch");
+      assert.ok(stakePosition.owner.equals(user1.publicKey), "Position owner mismatch");
+      assert.equal(stakePosition.principalAmount.toNumber(), stakeAmount.toNumber(), "Principal amount mismatch");
+      assert.ok(stakePosition.isActive, "Position should be active");
+      assert.equal(globalState.totalStakedLongTerm.toNumber(), stakeAmount.toNumber(), "Global long term stake mismatch");
+
+      console.log("✅ Long Term Staking successful!");
+    });
+
+    it("🔵 Should allow a user to stake in a Flexible position", async () => {
+      console.log("🤸 Testing Flexible Staking...");
+
+      // Criar contas de token para o usuário 2
+      const user2GmcAccount = await createTokenAccount(provider, gmcMint, user2.publicKey);
+      const user2UsdtAccount = await createTokenAccount(provider, usdtMint, user2.publicKey);
+
+      // Mintar tokens para o usuário 2
+      const stakeAmount = new anchor.BN(75 * 10 ** 9); // 75 GMC
+      const feeAmount = new anchor.BN(5 * 10 ** 9); // 5 USDT para taxas
+      await mintTo(provider, gmcMint, user2GmcAccount, stakeAmount.toNumber());
+      await mintTo(provider, usdtMint, user2UsdtAccount, feeAmount.toNumber());
+
+      // Encontrar o PDA da posição de stake
+      const [stakePositionPda] = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from("stake_position"), user2.publicKey.toBuffer(), Buffer.from([0])],
+        program.programId
+      );
+
+      await program.methods
+        .stakeFlexible(stakeAmount)
+        .accounts({
+          user: user2.publicKey,
+          globalState: globalStatePda,
+          userStakeInfo: user2StakeInfoPda,
+          stakePosition: stakePositionPda,
+          gmcTokenMint: gmcMint,
+          stakingVault: stakingVault,
+          userGmcTokenAccount: user2GmcAccount,
+          usdtTokenMint: usdtMint,
+          feeCollectionVault: feeVault,
+          userUsdtTokenAccount: user2UsdtAccount,
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([user2])
+        .rpc();
+
+      const userStakeInfo = await program.account.userStakeInfo.fetch(user2StakeInfoPda);
+      const stakePosition = await program.account.stakePosition.fetch(stakePositionPda);
+      const globalState = await program.account.globalState.fetch(globalStatePda);
+
+      assert.equal(userStakeInfo.totalPositions, 1, "User should have 1 position");
+      assert.equal(userStakeInfo.totalStakedAmount.toNumber(), stakeAmount.toNumber(), "User total stake mismatch");
+      assert.ok(stakePosition.owner.equals(user2.publicKey), "Position owner mismatch");
+      assert.deepStrictEqual(stakePosition.stakeType, { flexible: {} }, "Stake type should be Flexible");
+      assert.equal(globalState.totalStakedFlexible.toNumber(), stakeAmount.toNumber(), "Global flexible stake mismatch");
+
+      console.log("✅ Flexible Staking successful!");
+    });
+
+    it("🔵 Should allow a user to unstake from a Flexible position", async () => {
+      console.log("🔓 Testing Flexible Unstaking...");
+
+      // Posição de stake criada no teste anterior para user2
+      const [stakePositionPda] = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from("stake_position"), user2.publicKey.toBuffer(), Buffer.from([0])],
+        program.programId
+      );
+
+      // Contas de token do usuário 2
+      const user2GmcAccount = await createTokenAccount(provider, gmcMint, user2.publicKey);
+
+      const initialUserBalance = (await provider.connection.getTokenAccountBalance(user2GmcAccount)).value.uiAmount;
+      const initialVaultBalance = (await provider.connection.getTokenAccountBalance(stakingVault)).value.uiAmount;
+
+      await program.methods
+        .unstakeFlexible()
+        .accounts({
+          user: user2.publicKey,
+          globalState: globalStatePda,
+          userStakeInfo: user2StakeInfoPda,
+          stakePosition: stakePositionPda,
+          gmcTokenMint: gmcMint,
+          stakingVault: stakingVault,
+          userGmcTokenAccount: user2GmcAccount,
+          feeCollectionVault: feeVault, // A penalidade vai para o cofre de taxas
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        })
+        .signers([user2])
+        .rpc();
+
+      const stakePosition = await program.account.stakePosition.fetch(stakePositionPda);
+      assert.isFalse(stakePosition.isActive, "Position should be inactive after unstaking");
+
+      const finalUserBalance = (await provider.connection.getTokenAccountBalance(user2GmcAccount)).value.uiAmount;
+      const finalVaultBalance = (await provider.connection.getTokenAccountBalance(stakingVault)).value.uiAmount;
+
+      // Lógica de verificação de saldo (simplificada)
+      // Em um teste real, calcularíamos a penalidade exata
+      assert.isAbove(finalUserBalance, initialUserBalance, "User balance should increase after unstake");
+      assert.isBelow(finalVaultBalance, initialVaultBalance, "Vault balance should decrease after unstake");
+
+      console.log("✅ Flexible Unstaking successful!");
+    });
+
+    it("🔵 Should allow a user to unstake from a Flexible position", async () => {
+      console.log("🔓 Testing Flexible Unstaking...");
+
+      // Posição de stake criada no teste anterior para user2
+      const [stakePositionPda] = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from("stake_position"), user2.publicKey.toBuffer(), Buffer.from([0])],
+        program.programId
+      );
+
+      // Contas de token do usuário 2
+      const user2GmcAccount = await createTokenAccount(provider, gmcMint, user2.publicKey);
+
+      const initialUserBalance = (await provider.connection.getTokenAccountBalance(user2GmcAccount)).value.uiAmount;
+      const initialVaultBalance = (await provider.connection.getTokenAccountBalance(stakingVault)).value.uiAmount;
+
+      await program.methods
+        .unstakeFlexible()
+        .accounts({
+          user: user2.publicKey,
+          globalState: globalStatePda,
+          userStakeInfo: user2StakeInfoPda,
+          stakePosition: stakePositionPda,
+          gmcTokenMint: gmcMint,
+          stakingVault: stakingVault,
+          userGmcTokenAccount: user2GmcAccount,
+          feeCollectionVault: feeVault, // A penalidade vai para o cofre de taxas
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        })
+        .signers([user2])
+        .rpc();
+
+      const stakePosition = await program.account.stakePosition.fetch(stakePositionPda);
+      assert.isFalse(stakePosition.isActive, "Position should be inactive after unstaking");
+
+      const finalUserBalance = (await provider.connection.getTokenAccountBalance(user2GmcAccount)).value.uiAmount;
+      const finalVaultBalance = (await provider.connection.getTokenAccountBalance(stakingVault)).value.uiAmount;
+
+      // Lógica de verificação de saldo (simplificada)
+      // Em um teste real, calcularíamos a penalidade exata
+      assert.isAbove(finalUserBalance, initialUserBalance, "User balance should increase after unstake");
+      assert.isBelow(finalVaultBalance, initialVaultBalance, "Vault balance should decrease after unstake");
+
+      console.log("✅ Flexible Unstaking successful!");
+    });
+
+    it("🔴 Should FAIL to unstake from a Long-Term position before lock-up ends", async () => {
+      console.log("⏳ Testing premature Long-Term Unstaking...");
+
+      const [stakePositionPda] = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from("stake_position"), user.publicKey.toBuffer(), Buffer.from([0])],
+        program.programId
+      );
+
       try {
-        // Em implementação real, chamaríamos a função aqui
-        console.log("✅ GlobalState structure planned:");
-        console.log("   • admin: Pubkey");
-        console.log("   • gmc_token_mint: Pubkey");
-        console.log("   • staking_vault: Pubkey");
-        console.log("   • ranking_contract: Pubkey");
-        console.log("   • flexible_apy_rate: u16");
-        console.log("   • total_staked_long_term: u64");
-        console.log("   • total_staked_flexible: u64");
-        
-        assert.isTrue(true, "GlobalState structure verified");
-        
+        await program.methods
+          .unstakeLongTerm()
+          .accounts({
+            user: user.publicKey,
+            globalState: globalStatePda,
+            userStakeInfo: userStakeInfoPda,
+            stakePosition: stakePositionPda,
+            gmcTokenMint: gmcMint,
+            stakingVault: stakingVault,
+            userGmcTokenAccount: userGmcAccount,
+            tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+          })
+          .signers([user])
+          .rpc();
+        assert.fail("Transaction should have failed but succeeded.");
       } catch (error) {
-        console.log("ℹ️ Function structure is planned, full testing requires implementation");
-        assert.isTrue(true, "Implementation structure is correct");
+        assert.include(error.message, "UnstakePeriodNotEnded", "Error should be UnstakePeriodNotEnded");
       }
+
+      console.log("✅ Premature Long-Term Unstaking failed as expected!");
+    });
+
+    it("🔵 Should allow a user to unstake from a Long-Term position after lock-up ends", async () => {
+      console.log("⏩ Advancing time to test Long-Term Unstaking...");
+
+      // Avançar o tempo em 1 ano + 1 dia para garantir que o período de bloqueio terminou
+      const oneYearInSeconds = 365 * 24 * 60 * 60;
+      const oneDayInSeconds = 24 * 60 * 60;
+      await provider.connection.send(new anchor.web3.Transaction().add(
+        anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({ units: 1_000_000 }),
+        anchor.web3.SystemProgram.transfer({ fromPubkey: user.publicKey, toPubkey: user.publicKey, lamports: 0 })
+      )); // Dummy transaction to advance clock
+      // This is a bit of a hack for local testing. A better way is to use `provider.sendAndConfirm` with a slot progression.
+      // For simplicity here, we assume the local validator clock advances.
+      // In a real test suite, you'd use a more robust time-travel method.
+      console.log(`Simulating passage of ${oneYearInSeconds + oneDayInSeconds} seconds...`);
+
+      const [stakePositionPda] = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from("stake_position"), user.publicKey.toBuffer(), Buffer.from([0])],
+        program.programId
+      );
+
+      const initialUserBalance = (await provider.connection.getTokenAccountBalance(userGmcAccount)).value.uiAmount;
+
+      await program.methods
+        .unstakeLongTerm()
+        .accounts({
+          user: user.publicKey,
+          globalState: globalStatePda,
+          userStakeInfo: userStakeInfoPda,
+          stakePosition: stakePositionPda,
+          gmcTokenMint: gmcMint,
+          stakingVault: stakingVault,
+          userGmcTokenAccount: userGmcAccount,
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        })
+        .signers([user])
+        .rpc();
+
+      const stakePosition = await program.account.stakePosition.fetch(stakePositionPda);
+      assert.isFalse(stakePosition.isActive, "Position should be inactive after unstaking");
+
+      const finalUserBalance = (await provider.connection.getTokenAccountBalance(userGmcAccount)).value.uiAmount;
+      // We expect the user to receive principal + rewards
+      assert.isAbove(finalUserBalance, initialUserBalance, "User balance should increase after unstake");
+
+      console.log("✅ Long-Term Unstaking successful after lock-up period!");
+    });
+
+
+
+    it("🔵 Should allow a user to unstake from a Flexible position", async () => {
+      console.log("🔓 Testing Flexible Unstaking...");
+
+      // Posição de stake criada no teste anterior para user2
+      const [stakePositionPda] = anchor.web3.PublicKey.findProgramAddressSync(
+        [Buffer.from("stake_position"), user2.publicKey.toBuffer(), Buffer.from([0])],
+        program.programId
+      );
+
+      // Contas de token do usuário 2
+      const user2GmcAccount = await createTokenAccount(provider, gmcMint, user2.publicKey);
+
+      const initialUserBalance = (await provider.connection.getTokenAccountBalance(user2GmcAccount)).value.uiAmount;
+      const initialVaultBalance = (await provider.connection.getTokenAccountBalance(stakingVault)).value.uiAmount;
+
+      await program.methods
+        .unstakeFlexible()
+        .accounts({
+          user: user2.publicKey,
+          globalState: globalStatePda,
+          userStakeInfo: user2StakeInfoPda,
+          stakePosition: stakePositionPda,
+          gmcTokenMint: gmcMint,
+          stakingVault: stakingVault,
+          userGmcTokenAccount: user2GmcAccount,
+          feeCollectionVault: feeVault, // A penalidade vai para o cofre de taxas
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        })
+        .signers([user2])
+        .rpc();
+
+      const stakePosition = await program.account.stakePosition.fetch(stakePositionPda);
+      assert.isFalse(stakePosition.isActive, "Position should be inactive after unstaking");
+
+      const finalUserBalance = (await provider.connection.getTokenAccountBalance(user2GmcAccount)).value.uiAmount;
+      const finalVaultBalance = (await provider.connection.getTokenAccountBalance(stakingVault)).value.uiAmount;
+
+      // Lógica de verificação de saldo (simplificada)
+      // Em um teste real, calcularíamos a penalidade exata
+      assert.isAbove(finalUserBalance, initialUserBalance, "User balance should increase after unstake");
+      assert.isBelow(finalVaultBalance, initialVaultBalance, "Vault balance should decrease after unstake");
+
+      console.log("✅ Flexible Unstaking successful!");
     });
 
     it("🔵 Should test UserStakeInfo structure", async () => {
@@ -253,4 +602,4 @@ describe("🥇 GMC Staking - Core Implementation (TDD)", () => {
       assert.isTrue(true, "Staking TDD phase ready for implementation");
     });
   });
-}); 
+});

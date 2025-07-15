@@ -26,11 +26,11 @@ describe("GMC Ranking Contract - Merkle Tree Rewards", () => {
 
   it("Allows admin to set a Merkle root and a winner to claim rewards", async () => {
     const [rankingStatePda] = anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("ranking_state_seed")],
+      [Buffer.from("ranking_state")],
       program.programId
     );
     const [rewardsVaultPda] = anchor.web3.PublicKey.findProgramAddressSync(
-      [Buffer.from("rewards_vault_seed"), rankingStatePda.toBuffer()],
+      [Buffer.from("rewards_vault"), rankingStatePda.toBuffer()],
       program.programId
     );
 
@@ -103,4 +103,4 @@ describe("GMC Ranking Contract - Merkle Tree Rewards", () => {
     assert.isTrue(claimedStatus.isClaimed);
     assert.equal(claimedStatus.amount.toString(), winnerData.amount.toString());
   });
-}); 
+});
