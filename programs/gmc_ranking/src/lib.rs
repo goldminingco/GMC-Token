@@ -22,7 +22,7 @@ use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
 // EN: The unique identifier for the Ranking program.
 // PT: O identificador único para o programa de Ranking.
-declare_id!("GmcRank111111111111111111111111111111111111");
+declare_id!("CUM2m3SXR1S8Yg8rPBUVv7fWEN2n5JzR3W3vA1Xv2b7b");
 
 // =====================================================
 // EN: Merkle Tree Verification Module

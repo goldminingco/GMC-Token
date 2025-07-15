@@ -1,0 +1,700 @@
+# 🚀 GMC Ecosystem - CI/CD Pipeline with Integrated Security
+# Pipeline DevSecOps automatizado para Devnet, Testnet e Mainnet
+
+name: "GMC-DevSecOps-Pipeline"
+version: "1.0"
+last_updated: "2024-12-19"
+
+# =============================================================================
+# CONFIGURAÇÕES GLOBAIS
+# =============================================================================
+global:
+  timeout: 3600  # 1 hora
+  retry_attempts: 3
+  parallel_jobs: 4
+  artifact_retention: 30  # dias
+  
+  environment_variables:
+    RUST_LOG: "info"
+    ANCHOR_PROVIDER_URL: "${RPC_URL}"
+    ANCHOR_WALLET: "${WALLET_PATH}"
+    SECURITY_SCAN_ENABLED: "true"
+    COMPLIANCE_CHECK_ENABLED: "true"
+    
+  notifications:
+    slack_webhook: "${SLACK_WEBHOOK_URL}"
+    email_alerts: "${SECURITY_TEAM_EMAIL}"
+    teams_webhook: "${TEAMS_WEBHOOK_URL}"
+
+# =============================================================================
+# TRIGGERS E CONDIÇÕES
+# =============================================================================
+triggers:
+  push:
+    branches:
+      - "main"
+      - "develop"
+      - "release/*"
+      - "hotfix/*"
+    paths:
+      - "programs/**"
+      - "scripts/**"
+      - "tests/**"
+      - "Cargo.toml"
+      - "Anchor.toml"
+      
+  pull_request:
+    branches:
+      - "main"
+      - "develop"
+    types:
+      - "opened"
+      - "synchronize"
+      - "reopened"
+      
+  schedule:
+    # Security scan diário às 02:00 UTC
+    - cron: "0 2 * * *"
+      job: "security_scan"
+    # Compliance check semanal
+    - cron: "0 6 * * 1"
+      job: "compliance_check"
+      
+  manual:
+    environments:
+      - "testnet"
+      - "mainnet"
+    approval_required: true
+
+# =============================================================================
+# ESTÁGIOS DO PIPELINE
+# =============================================================================
+stages:
+  # ---------------------------------------------------------------------------
+  # STAGE 1: PRE-BUILD SECURITY
+  # ---------------------------------------------------------------------------
+  pre_build_security:
+    name: "🔒 Pre-Build Security Checks"
+    timeout: 600  # 10 minutos
+    
+    jobs:
+      secret_scanning:
+        name: "Secret Detection"
+        tools:
+          - name: "truffleHog"
+            command: "trufflehog git file://. --only-verified"
+            fail_on_findings: true
+          - name: "gitleaks"
+            command: "gitleaks detect --source . --verbose"
+            fail_on_findings: true
+        artifacts:
+          - "secret-scan-results.json"
+          
+      dependency_scanning:
+        name: "Dependency Vulnerability Scan"
+        tools:
+          - name: "cargo-audit"
+            command: "cargo audit --json"
+            fail_on: "high,critical"
+          - name: "cargo-deny"
+            command: "cargo deny check"
+            config: ".cargo-deny.toml"
+        artifacts:
+          - "dependency-scan-results.json"
+          
+      license_compliance:
+        name: "License Compliance Check"
+        tools:
+          - name: "cargo-license"
+            command: "cargo license --json"
+            allowed_licenses:
+              - "MIT"
+              - "Apache-2.0"
+              - "BSD-3-Clause"
+        artifacts:
+          - "license-compliance.json"
+
+  # ---------------------------------------------------------------------------
+  # STAGE 2: BUILD E TESTES
+  # ---------------------------------------------------------------------------
+  build_and_test:
+    name: "🔨 Build & Test"
+    timeout: 1800  # 30 minutos
+    depends_on: ["pre_build_security"]
+    
+    jobs:
+      build:
+        name: "Build Programs"
+        steps:
+          - name: "Setup Rust"
+            uses: "actions-rs/toolchain@v1"
+            with:
+              toolchain: "stable"
+              components: "clippy,rustfmt"
+              
+          - name: "Setup Anchor"
+            run: |
+              npm install -g @coral-xyz/anchor-cli
+              anchor --version
+              
+          - name: "Cache Dependencies"
+            uses: "actions/cache@v3"
+            with:
+              path: |
+                ~/.cargo/registry
+                ~/.cargo/git
+                target/
+              key: "cargo-${{ hashFiles('**/Cargo.lock') }}"
+              
+          - name: "Build All Programs"
+            run: |
+              anchor build
+              ls -la target/deploy/
+              
+        artifacts:
+          - "target/deploy/*.so"
+          - "target/idl/*.json"
+          
+      static_analysis:
+        name: "Static Code Analysis"
+        parallel: true
+        tools:
+          clippy:
+            command: "cargo clippy --all-targets --all-features -- -D warnings"
+            fail_on_warnings: true
+            
+          rustfmt:
+            command: "cargo fmt --all -- --check"
+            fail_on_diff: true
+            
+          semgrep:
+            command: "semgrep --config=auto --json --output=semgrep-results.json ."
+            rules:
+              - "rust.lang.security"
+              - "generic.secrets"
+              - "solana.security"
+              
+        artifacts:
+          - "clippy-results.json"
+          - "semgrep-results.json"
+          
+      unit_tests:
+        name: "Unit Tests"
+        steps:
+          - name: "Run Unit Tests"
+            run: |
+              cargo test --all-features --workspace
+              
+          - name: "Generate Coverage Report"
+            run: |
+              cargo install cargo-tarpaulin
+              cargo tarpaulin --out xml --output-dir coverage/
+              
+        coverage:
+          minimum: 80
+          fail_below: true
+          
+        artifacts:
+          - "coverage/cobertura.xml"
+          - "test-results.xml"
+
+  # ---------------------------------------------------------------------------
+  # STAGE 3: SECURITY TESTING
+  # ---------------------------------------------------------------------------
+  security_testing:
+    name: "🛡️ Security Testing"
+    timeout: 2400  # 40 minutos
+    depends_on: ["build_and_test"]
+    
+    jobs:
+      smart_contract_analysis:
+        name: "Smart Contract Security Analysis"
+        tools:
+          mythril:
+            command: "myth analyze target/deploy/*.so --execution-timeout 300"
+            output_format: "json"
+            
+          slither:
+            command: "slither . --json slither-results.json"
+            detectors: "all"
+            
+          securify:
+            command: "securify --json securify-results.json programs/"
+            
+        artifacts:
+          - "mythril-results.json"
+          - "slither-results.json"
+          - "securify-results.json"
+          
+      penetration_testing:
+        name: "Automated Penetration Testing"
+        condition: "branch == 'main' || branch == 'release/*'"
+        tools:
+          custom_fuzzer:
+            command: "./scripts/security/fuzz-test.sh"
+            duration: 1800  # 30 minutos
+            
+          transaction_fuzzer:
+            command: "./scripts/security/transaction-fuzzer.sh"
+            iterations: 10000
+            
+        artifacts:
+          - "fuzz-results.json"
+          - "transaction-fuzz-results.json"
+          
+      owasp_compliance:
+        name: "OWASP Smart Contract Top 10 Compliance"
+        checklist:
+          - name: "SC01 - Reentrancy"
+            script: "./scripts/security/check-reentrancy.sh"
+            
+          - name: "SC02 - Integer Overflow"
+            script: "./scripts/security/check-overflow.sh"
+            
+          - name: "SC03 - Timestamp Dependence"
+            script: "./scripts/security/check-timestamp.sh"
+            
+          - name: "SC04 - Authorization"
+            script: "./scripts/security/check-authorization.sh"
+            
+          - name: "SC05 - Unprotected Withdrawal"
+            script: "./scripts/security/check-withdrawal.sh"
+            
+          - name: "SC06 - Selfdestruct"
+            script: "./scripts/security/check-selfdestruct.sh"
+            
+          - name: "SC07 - Floating Pragma"
+            script: "./scripts/security/check-pragma.sh"
+            
+          - name: "SC08 - Function Visibility"
+            script: "./scripts/security/check-visibility.sh"
+            
+          - name: "SC09 - Gas Limit DoS"
+            script: "./scripts/security/check-gas-limit.sh"
+            
+          - name: "SC10 - Unhandled Exception"
+            script: "./scripts/security/check-exceptions.sh"
+            
+        artifacts:
+          - "owasp-compliance-report.json"
+
+  # ---------------------------------------------------------------------------
+  # STAGE 4: INTEGRATION TESTING
+  # ---------------------------------------------------------------------------
+  integration_testing:
+    name: "🔗 Integration Testing"
+    timeout: 1800  # 30 minutos
+    depends_on: ["security_testing"]
+    
+    jobs:
+      devnet_integration:
+        name: "Devnet Integration Tests"
+        environment: "devnet"
+        steps:
+          - name: "Deploy to Devnet"
+            run: |
+              ./scripts/deploy_ecosystem_automated.ts --environment devnet --security-level basic
+              
+          - name: "Run Integration Tests"
+            run: |
+              npm test -- --testPathPattern=integration --testTimeout=300000
+              
+          - name: "Performance Tests"
+            run: |
+              ./scripts/performance/load-test.sh devnet
+              
+        artifacts:
+          - "devnet-integration-results.json"
+          - "devnet-performance-results.json"
+          
+      testnet_validation:
+        name: "Testnet Validation"
+        environment: "testnet"
+        condition: "branch == 'main' || branch == 'release/*'"
+        manual_approval: true
+        
+        steps:
+          - name: "Pre-deployment Security Scan"
+            run: |
+              ./scripts/security/pre-deploy-scan.sh testnet
+              
+          - name: "Deploy to Testnet"
+            run: |
+              ./scripts/deploy_ecosystem_automated.ts --environment testnet --security-level high
+              
+          - name: "End-to-End Tests"
+            run: |
+              npm test -- --testPathPattern=e2e --testTimeout=600000
+              
+          - name: "Security Validation"
+            run: |
+              ./scripts/security/post-deploy-validation.sh testnet
+              
+        artifacts:
+          - "testnet-validation-results.json"
+          - "testnet-security-validation.json"
+
+  # ---------------------------------------------------------------------------
+  # STAGE 5: SECURITY VALIDATION
+  # ---------------------------------------------------------------------------
+  security_validation:
+    name: "🔍 Security Validation"
+    timeout: 1200  # 20 minutos
+    depends_on: ["integration_testing"]
+    
+    jobs:
+      vulnerability_assessment:
+        name: "Vulnerability Assessment"
+        tools:
+          nessus:
+            enabled: false  # Requer licença
+            scan_type: "comprehensive"
+            
+          openvas:
+            enabled: true
+            scan_type: "full"
+            
+          custom_scanner:
+            script: "./scripts/security/vulnerability-scanner.sh"
+            
+        artifacts:
+          - "vulnerability-assessment.json"
+          
+      compliance_validation:
+        name: "Compliance Validation"
+        frameworks:
+          soc2:
+            controls: "./config/soc2-controls.yaml"
+            script: "./scripts/compliance/soc2-check.sh"
+            
+          iso27001:
+            controls: "./config/iso27001-controls.yaml"
+            script: "./scripts/compliance/iso27001-check.sh"
+            
+        artifacts:
+          - "compliance-validation.json"
+          
+      security_metrics:
+        name: "Security Metrics Collection"
+        metrics:
+          - "code_coverage"
+          - "vulnerability_count"
+          - "security_test_pass_rate"
+          - "compliance_score"
+          
+        dashboard_update: true
+        
+        artifacts:
+          - "security-metrics.json"
+
+  # ---------------------------------------------------------------------------
+  # STAGE 6: DEPLOYMENT
+  # ---------------------------------------------------------------------------
+  deployment:
+    name: "🚀 Deployment"
+    timeout: 1800  # 30 minutos
+    depends_on: ["security_validation"]
+    
+    jobs:
+      devnet_deploy:
+        name: "Devnet Deployment"
+        environment: "devnet"
+        condition: "branch == 'develop' || branch == 'feature/*'"
+        auto_deploy: true
+        
+        steps:
+          - name: "Pre-deployment Checks"
+            run: |
+              ./scripts/deployment/pre-deploy-checks.sh devnet
+              
+          - name: "Deploy to Devnet"
+            run: |
+              ./scripts/deploy_ecosystem_automated.ts --environment devnet --auto-confirm
+              
+          - name: "Post-deployment Validation"
+            run: |
+              ./scripts/deployment/post-deploy-validation.sh devnet
+              
+          - name: "Smoke Tests"
+            run: |
+              ./scripts/testing/smoke-tests.sh devnet
+              
+        rollback:
+          enabled: true
+          trigger: "on_failure"
+          script: "./scripts/deployment/rollback.sh devnet"
+          
+      testnet_deploy:
+        name: "Testnet Deployment"
+        environment: "testnet"
+        condition: "branch == 'main' || branch == 'release/*'"
+        manual_approval: true
+        approvers:
+          - "security-team"
+          - "devops-team"
+          
+        steps:
+          - name: "Security Pre-flight"
+            run: |
+              ./scripts/security/pre-flight-check.sh testnet
+              
+          - name: "Deploy to Testnet"
+            run: |
+              ./scripts/deploy_ecosystem_automated.ts --environment testnet --security-level high
+              
+          - name: "Security Post-deployment"
+            run: |
+              ./scripts/security/post-deploy-security.sh testnet
+              
+          - name: "Bug Bounty Notification"
+            run: |
+              ./scripts/notifications/bug-bounty-notify.sh testnet
+              
+        rollback:
+          enabled: true
+          trigger: "manual_or_failure"
+          script: "./scripts/deployment/rollback.sh testnet"
+          
+      mainnet_deploy:
+        name: "Mainnet Deployment"
+        environment: "mainnet"
+        condition: "tag =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/"
+        manual_approval: true
+        approvers:
+          - "ciso"
+          - "cto"
+          - "security-lead"
+          
+        steps:
+          - name: "Final Security Audit"
+            run: |
+              ./scripts/security/final-audit.sh
+              
+          - name: "Ceremonial Deployment"
+            run: |
+              ./scripts/mainnet_deploy_ceremony.ts
+              
+          - name: "24/7 Monitoring Activation"
+            run: |
+              ./scripts/monitoring/activate-mainnet-monitoring.sh
+              
+        rollback:
+          enabled: true
+          trigger: "manual_only"
+          script: "./scripts/deployment/emergency-rollback.sh mainnet"
+          approval_required: true
+
+  # ---------------------------------------------------------------------------
+  # STAGE 7: POST-DEPLOYMENT
+  # ---------------------------------------------------------------------------
+  post_deployment:
+    name: "📊 Post-Deployment"
+    timeout: 600  # 10 minutos
+    depends_on: ["deployment"]
+    
+    jobs:
+      monitoring_setup:
+        name: "Monitoring & Alerting Setup"
+        steps:
+          - name: "Configure Monitoring"
+            run: |
+              ./scripts/monitoring/setup-monitoring.sh ${ENVIRONMENT}
+              
+          - name: "Setup Alerting Rules"
+            run: |
+              ./scripts/monitoring/setup-alerts.sh ${ENVIRONMENT}
+              
+          - name: "Health Check"
+            run: |
+              ./scripts/monitoring/health-check.sh ${ENVIRONMENT}
+              
+      documentation_update:
+        name: "Documentation Update"
+        steps:
+          - name: "Generate API Docs"
+            run: |
+              anchor idl parse --file target/idl/gmc_token.json > docs/api/gmc_token.md
+              
+          - name: "Update Security Docs"
+            run: |
+              ./scripts/docs/update-security-docs.sh
+              
+          - name: "Generate Deployment Report"
+            run: |
+              ./scripts/docs/generate-deployment-report.sh ${ENVIRONMENT}
+              
+      notification:
+        name: "Stakeholder Notification"
+        steps:
+          - name: "Send Deployment Notification"
+            run: |
+              ./scripts/notifications/deployment-success.sh ${ENVIRONMENT}
+              
+          - name: "Update Status Page"
+            run: |
+              ./scripts/notifications/update-status-page.sh ${ENVIRONMENT}
+
+# =============================================================================
+# CONFIGURAÇÕES DE SEGURANÇA
+# =============================================================================
+security_config:
+  secrets_management:
+    provider: "hashicorp_vault"
+    rotation: "automatic"
+    encryption: "aes_256_gcm"
+    
+  access_control:
+    authentication: "required"
+    authorization: "rbac"
+    mfa: "required_for_production"
+    
+  audit_logging:
+    enabled: true
+    retention: "1_year"
+    encryption: "enabled"
+    
+  network_security:
+    tls_version: "1.3"
+    certificate_validation: "strict"
+    firewall_rules: "restrictive"
+
+# =============================================================================
+# CONFIGURAÇÕES DE QUALIDADE
+# =============================================================================
+quality_gates:
+  code_coverage:
+    minimum: 80
+    target: 95
+    
+  security_score:
+    minimum: 85
+    target: 95
+    
+  performance:
+    response_time: "< 200ms"
+    throughput: "> 1000 TPS"
+    
+  compliance:
+    minimum_score: 90
+    required_frameworks:
+      - "owasp_top_10"
+      - "soc2"
+
+# =============================================================================
+# CONFIGURAÇÕES DE NOTIFICAÇÃO
+# =============================================================================
+notifications:
+  channels:
+    slack:
+      webhook: "${SLACK_WEBHOOK}"
+      channels:
+        - "#devsecops"
+        - "#security-alerts"
+        - "#deployments"
+        
+    email:
+      smtp_server: "${SMTP_SERVER}"
+      recipients:
+        - "security-team@gmc.com"
+        - "devops-team@gmc.com"
+        
+    teams:
+      webhook: "${TEAMS_WEBHOOK}"
+      
+  triggers:
+    security_failure:
+      severity: "critical"
+      channels: ["slack", "email", "teams"]
+      
+    deployment_success:
+      severity: "info"
+      channels: ["slack"]
+      
+    compliance_violation:
+      severity: "high"
+      channels: ["slack", "email"]
+
+# =============================================================================
+# CONFIGURAÇÕES DE ARTEFATOS
+# =============================================================================
+artifacts:
+  retention:
+    security_reports: "1_year"
+    build_artifacts: "6_months"
+    test_results: "3_months"
+    logs: "1_year"
+    
+  storage:
+    provider: "aws_s3"
+    encryption: "enabled"
+    versioning: "enabled"
+    
+  access:
+    authentication: "required"
+    authorization: "role_based"
+    audit_logging: "enabled"
+
+# =============================================================================
+# CONFIGURAÇÕES DE PERFORMANCE
+# =============================================================================
+performance:
+  parallel_execution:
+    enabled: true
+    max_workers: 4
+    
+  caching:
+    enabled: true
+    providers:
+      - "redis"
+      - "filesystem"
+      
+  optimization:
+    build_cache: "enabled"
+    dependency_cache: "enabled"
+    test_parallelization: "enabled"
+
+# =============================================================================
+# CONFIGURAÇÕES DE ROLLBACK
+# =============================================================================
+rollback:
+  strategy: "blue_green"
+  
+  triggers:
+    automatic:
+      - "security_failure"
+      - "health_check_failure"
+      - "performance_degradation"
+      
+    manual:
+      - "business_decision"
+      - "compliance_violation"
+      
+  validation:
+    pre_rollback_checks: "enabled"
+    post_rollback_validation: "enabled"
+    
+  notification:
+    stakeholders: "immediate"
+    channels: ["slack", "email", "teams"]
+
+# =============================================================================
+# CONFIGURAÇÕES DE AMBIENTE
+# =============================================================================
+environment_specific:
+  devnet:
+    auto_deploy: true
+    security_level: "basic"
+    monitoring: "standard"
+    
+  testnet:
+    auto_deploy: false
+    security_level: "high"
+    monitoring: "enhanced"
+    bug_bounty: "enabled"
+    
+  mainnet:
+    auto_deploy: false
+    security_level: "maximum"
+    monitoring: "24x7"
+    incident_response: "immediate"
+    compliance: "strict"
