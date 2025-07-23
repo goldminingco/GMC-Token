@@ -11,7 +11,7 @@ pub mod critical_tests {
         program_error::ProgramError,
         pubkey::Pubkey,
     };
-    use solana_program::sysvar::{clock::Clock, Sysvar};
+    use solana_program::sysvar::Sysvar;
 
     // 🏋️ TESTES DE STRESS
     
