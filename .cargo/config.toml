@@ -1,0 +1,29 @@
+# 🚀 GMC Token - Optimized Cargo Configuration for Compute Units Reduction
+# Configurações específicas para minimizar compute usage
+
+# Only set BPF target when explicitly building for BPF (not for tests)
+# [build]
+# target = "bpfel-unknown-unknown"
+
+# Rust flags for aggressive optimization when targeting BPF
+[target.bpfel-unknown-unknown]
+rustflags = [
+    # 🚀 OPTIMIZATION: Target-specific optimizations for BPF
+    "-C", "target-cpu=generic",
+    "-C", "target-feature=+bulk-memory",
+    
+    # 🚀 OPTIMIZATION: Reduce code size (less instructions = less CUs)
+    "-C", "opt-level=z",
+    "-C", "lto=fat",
+    "-C", "codegen-units=1",
+    
+    # 🚀 OPTIMIZATION: Remove bounds checking where safe
+    "-C", "overflow-checks=off",
+    
+    # 🚀 OPTIMIZATION: Advanced link optimizations
+    "-C", "embed-bitcode=yes",
+    "-C", "relocation-model=static",
+]
+
+# Profile-specific optimizations are handled in Cargo.toml
+# This config focuses on rustflags for BPF compilation 

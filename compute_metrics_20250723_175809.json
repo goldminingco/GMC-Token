@@ -1,0 +1,107 @@
+{
+  "timestamp": "2025-07-23T17:58:09-03:00",
+  "build_size": "243K",
+  "measurements": {
+    "process_stake": {
+      "description": "Staking com taxa USDT e distribuição",
+      "scenarios": {
+        "light": 7670,
+        "medium": 8555,
+        "heavy": 9188
+      },
+      "average": 8471,
+      "complexity": "high"
+    }
+,
+    "process_claim_rewards": {
+      "description": "Claim com APY dinâmico",
+      "scenarios": {
+        "light": 5993,
+        "medium": 6405,
+        "heavy": 7366
+      },
+      "average": 6588,
+      "complexity": "high"
+    }
+,
+    "process_burn_for_boost": {
+      "description": "Burn-for-boost com taxas",
+      "scenarios": {
+        "light": 4030,
+        "medium": 4506,
+        "heavy": 5551
+      },
+      "average": 4695,
+      "complexity": "medium"
+    }
+,
+    "process_transfer_with_fee": {
+      "description": "Transferência com distribuição de taxa",
+      "scenarios": {
+        "light": 3419,
+        "medium": 3591,
+        "heavy": 4072
+      },
+      "average": 3694,
+      "complexity": "low"
+    }
+,
+    "calculate_dynamic_apy": {
+      "description": "Cálculo de APY dinâmico",
+      "scenarios": {
+        "light": 2425,
+        "medium": 2401,
+        "heavy": 2641
+      },
+      "average": 2489,
+      "complexity": "low"
+    }
+,
+    "process_unstake": {
+      "description": "Unstaking padrão",
+      "scenarios": {
+        "light": 3300,
+        "medium": 3628,
+        "heavy": 4492
+      },
+      "average": 3806,
+      "complexity": "low"
+    }
+,
+    "update_affiliate_network": {
+      "description": "Atualização da rede de afiliados",
+      "scenarios": {
+        "light": 3089,
+        "medium": 3644,
+        "heavy": 4383
+      },
+      "average": 3705,
+      "complexity": "medium"
+    }
+,
+    "register_affiliate": {
+      "description": "Registro de afiliado",
+      "scenarios": {
+        "light": 3069,
+        "medium": 3953,
+        "heavy": 4202
+      },
+      "average": 3741,
+      "complexity": "low"
+    }
+,
+    "process_vesting_claim": {
+      "description": "Claim de vesting",
+      "scenarios": {
+        "light": 3186,
+        "medium": 3920,
+        "heavy": 4057
+      },
+      "average": 3721,
+      "complexity": "low"
+    }
+
+  },
+  "total_instructions": 9,
+  "analysis_date": "Wed Jul 23 17:58:10 -03 2025"
+}

@@ -1576,6 +1576,7 @@ dependencies = [
  "base64 0.22.1",
  "bincode",
  "borsh 1.5.7",
+ "bytemuck",
  "num-derive 0.4.2",
  "num-traits",
  "rand 0.8.5",
@@ -1585,6 +1586,7 @@ dependencies = [
  "solana-sdk",
  "spl-token",
  "thiserror",
+ "zerocopy",
 ]
 
 [[package]]

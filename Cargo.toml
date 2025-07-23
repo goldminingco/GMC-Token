@@ -7,7 +7,7 @@ members = [
     "programs/gmc_token_native"
 ]
 
-# Centralized dependencies for the entire workspace.
+# 🚀 OPTIMIZED DEPENDENCIES FOR COMPUTE UNITS REDUCTION
 [workspace.dependencies]
 solana-program = "1.18.26"
 spl-token = { version = "4.0.0", features = ["no-entrypoint"] }
@@ -21,12 +21,26 @@ num-derive = "0.4"
 solana-program-test = "1.18.26"
 solana-sdk = "1.18.26"
 
+# 🚀 ZERO-COPY SERIALIZATION OPTIMIZATION
+bytemuck = { version = "1.18.0", features = ["derive", "extern_crate_alloc"] }
+zerocopy = { version = "0.8.26", features = ["derive"] }
 
-# Centralized build profiles for the entire workspace.
+
+# 🚀 OPTIMIZED BUILD PROFILES FOR COMPUTE UNITS REDUCTION
 [profile.release]
+opt-level = 'z'              # Optimize for size (fewer instructions = fewer CUs)
+strip = "symbols"            # Remove debug symbols
+overflow-checks = false      # 🚀 OPTIMIZATION: Remove runtime overflow checks 
+lto = "fat"                  # Full Link Time Optimization
+codegen-units = 1            # Better optimization with single unit
+panic = "abort"              # Smaller binary size
+debug = false                # Remove debug info
+debug-assertions = false     # Remove debug assertions
+incremental = false          # Disable incremental compilation for better optimization
+rpath = false               # Reduce binary size
+
+# 🚀 AGGRESSIVE OPTIMIZATION for all dependencies
+[profile.release.package."*"]
 opt-level = 'z'
-strip = "symbols"
-overflow-checks = true
-lto = "fat"
-codegen-units = 1
-panic = "abort"
+overflow-checks = false
+debug-assertions = false
