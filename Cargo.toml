@@ -1,25 +1,32 @@
+# 🛡️ GMC Token Native Rust Workspace - Security First
+
 [workspace]
-members = [
-    "programs/gmc_token",
-    "programs/gmc_staking",
-    "programs/gmc_ranking",
-    "programs/gmc_vesting",
-    "programs/gmc_treasury"
-]
+# Use resolver v2 to avoid lockfile issues with cargo-build-sbf
 resolver = "2"
+members = [
+    "programs/gmc_token_native"
+]
 
+# Centralized dependencies for the entire workspace.
 [workspace.dependencies]
-anchor-lang = { version = "0.31.1", features = ["init-if-needed"] }
-anchor-spl = "0.31.1"
-spl-token = { version = "*", features = ["no-entrypoint"] }
-spl-token-2022 = { version = "~6", features = ["no-entrypoint"] }
-spl-associated-token-account = "*"
+solana-program = "1.18.26"
+spl-token = { version = "4.0.0", features = ["no-entrypoint"] }
+thiserror = "1.0.61"
+base64 = "0.22.1"
+serde = { version = "1.0", features = ["derive"] }
+bincode = "1.3.3"
+borsh = "1.5.7"
+num-traits = "0.2"
+num-derive = "0.4"
+solana-program-test = "1.18.26"
+solana-sdk = "1.18.26"
 
+
+# Centralized build profiles for the entire workspace.
 [profile.release]
+opt-level = 'z'
+strip = "symbols"
 overflow-checks = true
 lto = "fat"
 codegen-units = 1
-[profile.release.build-override]
-opt-level = 3
-incremental = false
-codegen-units = 1
+panic = "abort"

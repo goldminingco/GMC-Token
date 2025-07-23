@@ -1,0 +1,42 @@
+# Build artifacts
+target/
+Cargo.lock
+**/Cargo.lock
+
+# Workspace files that cause lockfile issues (commented out - needed for dependencies)
+# Cargo.toml
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation (not needed for build)
+Docs/
+README.md
+*.md
+
+# Backup directories
+backup_*
+old_*
+deprecated_*
+
+# Node.js (if any)
+node_modules/
+package-lock.json
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
