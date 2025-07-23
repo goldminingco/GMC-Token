@@ -1,0 +1,319 @@
+name: 🚀 Gas Optimization & Compute Unit Monitoring
+
+on:
+  push:
+    branches: [ main, develop, feature/gas-optimization ]
+    paths:
+      - 'programs/gmc_token_native/src/**'
+      - 'programs/gmc_token_native/Cargo.toml'
+      - '.github/workflows/gas-optimization.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'programs/gmc_token_native/src/**'
+      - 'programs/gmc_token_native/Cargo.toml'
+
+env:
+  SOLANA_VERSION: 1.17.22
+  RUST_TOOLCHAIN: stable
+
+jobs:
+  compute-unit-analysis:
+    name: 📊 Compute Unit Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: 🦀 Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          components: clippy, rustfmt
+          
+      - name: ⚡ Setup Solana
+        uses: solana-labs/setup-solana@v1
+        with:
+          solana-version: ${{ env.SOLANA_VERSION }}
+          
+      - name: 📦 Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+            programs/gmc_token_native/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+            
+      - name: 🔧 Build optimized contract
+        run: |
+          echo "🏗️ Building contract with optimization flags..."
+          ./build_stable.sh
+          
+      - name: 📏 Measure compute units
+        run: |
+          echo "📊 Measuring compute units for all critical instructions..."
+          ./scripts/measure_compute_units.sh
+          
+      - name: 📈 Analyze performance regression
+        run: |
+          echo "🔍 Checking for performance regressions..."
+          
+          # Criar script de análise inline se não existir
+          cat > analyze_regression.py << 'EOF'
+          import json
+          import sys
+          import os
+          
+          # Thresholds de compute units (baseados na estratégia)
+          THRESHOLDS = {
+              "process_stake": 8000,
+              "process_claim_rewards": 6000, 
+              "process_burn_for_boost": 4000,
+              "process_transfer_with_fee": 3000,
+              "calculate_dynamic_apy": 2000,
+              "process_unstake": 5000,
+              "update_affiliate_network": 5000,
+              "register_affiliate": 3000,
+              "process_vesting_claim": 4000
+          }
+          
+          # Encontrar arquivo de métricas mais recente
+          import glob
+          metric_files = glob.glob("compute_metrics_*.json")
+          if not metric_files:
+              print("❌ Nenhum arquivo de métricas encontrado")
+              sys.exit(1)
+              
+          latest_file = max(metric_files)
+          print(f"📄 Analisando: {latest_file}")
+          
+          with open(latest_file, 'r') as f:
+              data = json.load(f)
+              
+          measurements = data.get('measurements', {})
+          total_regressions = 0
+          total_instructions = len(measurements)
+          
+          print("\n📊 ANÁLISE DE PERFORMANCE:")
+          print("=" * 50)
+          
+          for instruction, metrics in measurements.items():
+              average_cu = metrics.get('average', 0)
+              threshold = THRESHOLDS.get(instruction, 5000)
+              
+              status = "✅ OK" if average_cu <= threshold else "❌ REGRESSION"
+              if average_cu > threshold:
+                  total_regressions += 1
+                  
+              print(f"{status} {instruction}: {average_cu} CUs (limite: {threshold})")
+              
+          print(f"\n📈 RESUMO:")
+          print(f"   Total de instruções: {total_instructions}")
+          print(f"   Regressões detectadas: {total_regressions}")
+          print(f"   Build size: {data.get('build_size', 'N/A')}")
+          
+          if total_regressions > 0:
+              print(f"\n❌ FALHA: {total_regressions} instruções acima do threshold!")
+              print("🎯 Ações recomendadas:")
+              print("   1. Revisar mudanças recentes no código")
+              print("   2. Aplicar otimizações da estratégia de gas")
+              print("   3. Considerar refatoração das funções problemáticas")
+              sys.exit(1)
+          else:
+              print("\n✅ SUCESSO: Todas as instruções dentro dos limites!")
+              
+          EOF
+          
+          python analyze_regression.py
+          
+      - name: 📊 Generate performance report
+        if: always()
+        run: |
+          echo "📋 Gerando relatório de performance..."
+          
+          # Criar relatório markdown
+          cat > performance_report.md << 'EOF'
+          # 📊 Performance Report - GMC Token
+          
+          **Data:** $(date)
+          **Commit:** ${{ github.sha }}
+          **Branch:** ${{ github.ref_name }}
+          
+          ## 📈 Métricas de Compute Units
+          
+          EOF
+          
+          # Adicionar métricas do JSON ao relatório
+          if [ -f compute_metrics_*.json ]; then
+              echo "Métricas detalhadas disponíveis no artifact." >> performance_report.md
+          fi
+          
+      - name: 📤 Upload metrics artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: compute-metrics-${{ github.sha }}
+          path: |
+            compute_metrics_*.json
+            performance_report.md
+          retention-days: 30
+          
+      - name: 💬 Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Ler métricas se disponível
+            let reportContent = "# 📊 Análise de Performance\n\n";
+            
+            try {
+              // Procurar arquivo de métricas
+              const files = fs.readdirSync('.');
+              const metricFile = files.find(f => f.startsWith('compute_metrics_'));
+              
+              if (metricFile) {
+                const data = JSON.parse(fs.readFileSync(metricFile, 'utf8'));
+                
+                reportContent += `**Build Size:** ${data.build_size}\n`;
+                reportContent += `**Total Instruções:** ${Object.keys(data.measurements).length}\n\n`;
+                
+                reportContent += "## 🎯 Principais Métricas\n\n";
+                reportContent += "| Instrução | CUs Médios | Status |\n";
+                reportContent += "|-----------|------------|--------|\n";
+                
+                const thresholds = {
+                  "process_stake": 8000,
+                  "process_claim_rewards": 6000,
+                  "process_burn_for_boost": 4000,
+                  "process_transfer_with_fee": 3000,
+                  "calculate_dynamic_apy": 2000
+                };
+                
+                for (const [instruction, metrics] of Object.entries(data.measurements)) {
+                  const avg = metrics.average;
+                  const threshold = thresholds[instruction] || 5000;
+                  const status = avg <= threshold ? "✅" : "❌";
+                  
+                  reportContent += `| ${instruction} | ${avg} | ${status} |\n`;
+                }
+                
+                reportContent += "\n---\n";
+                reportContent += "*Análise automática de compute units*";
+              }
+            } catch (error) {
+              reportContent += "❌ Erro ao processar métricas de performance.";
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: reportContent
+            });
+
+  security-check:
+    name: 🛡️ Security & Optimization Validation
+    runs-on: ubuntu-latest
+    needs: compute-unit-analysis
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: 🦀 Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: clippy
+          
+      - name: 🔍 Security lint with Clippy
+        run: |
+          cd programs/gmc_token_native
+          cargo clippy --all-targets --all-features -- \
+            -D warnings \
+            -D clippy::integer_overflow \
+            -D clippy::panic \
+            -D clippy::unwrap_used \
+            -W clippy::cast_possible_truncation \
+            -W clippy::cast_precision_loss
+            
+      - name: 🧪 Run security-focused tests
+        run: |
+          cd programs/gmc_token_native
+          cargo test --release critical_tests:: -- --nocapture
+          cargo test --release security:: -- --nocapture
+          
+      - name: 📋 Check optimization flags
+        run: |
+          echo "🔍 Verificando flags de otimização..."
+          
+          # Verificar Cargo.toml para flags de otimização
+          if grep -q "lto.*true" programs/gmc_token_native/Cargo.toml; then
+            echo "✅ LTO habilitado"
+          else
+            echo "⚠️ LTO não encontrado - recomendado para otimização"
+          fi
+          
+          if grep -q "codegen-units.*1" programs/gmc_token_native/Cargo.toml; then
+            echo "✅ Codegen units otimizado"
+          else
+            echo "ℹ️ Codegen units: usando padrão"
+          fi
+
+  build-optimization-report:
+    name: 📈 Build Optimization Report
+    runs-on: ubuntu-latest
+    needs: [compute-unit-analysis, security-check]
+    if: always()
+    
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: 📊 Download metrics
+        uses: actions/download-artifact@v3
+        with:
+          name: compute-metrics-${{ github.sha }}
+          
+      - name: 📋 Generate optimization recommendations
+        run: |
+          echo "# 🚀 Relatório de Otimização GMC Token" > optimization_report.md
+          echo "" >> optimization_report.md
+          echo "**Gerado em:** $(date)" >> optimization_report.md
+          echo "**Commit:** ${{ github.sha }}" >> optimization_report.md
+          echo "" >> optimization_report.md
+          
+          echo "## 📊 Status Atual" >> optimization_report.md
+          echo "" >> optimization_report.md
+          
+          if [ -f compute_metrics_*.json ]; then
+            echo "✅ Métricas de compute units coletadas" >> optimization_report.md
+          else
+            echo "❌ Métricas não disponíveis" >> optimization_report.md
+          fi
+          
+          echo "" >> optimization_report.md
+          echo "## 🎯 Próximos Passos" >> optimization_report.md
+          echo "" >> optimization_report.md
+          echo "1. **Análise de Hotspots:** Identificar instruções com maior consumo" >> optimization_report.md
+          echo "2. **Packed Structures:** Implementar data structures otimizadas" >> optimization_report.md
+          echo "3. **Cache Strategy:** Implementar cache para cálculos frequentes" >> optimization_report.md
+          echo "4. **Batch Operations:** Otimizar CPIs com operações em lote" >> optimization_report.md
+          echo "" >> optimization_report.md
+          echo "## 📚 Referências" >> optimization_report.md
+          echo "- [Estratégia de Otimização](GAS_OPTIMIZATION_STRATEGY.md)" >> optimization_report.md
+          echo "- [Documentação Solana Performance](https://docs.solana.com/developing/programming-model/performance)" >> optimization_report.md
+          
+      - name: 📤 Upload final report
+        uses: actions/upload-artifact@v3
+        with:
+          name: optimization-report-${{ github.sha }}
+          path: optimization_report.md
+          retention-days: 90 
