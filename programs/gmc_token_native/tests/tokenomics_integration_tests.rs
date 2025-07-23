@@ -42,9 +42,9 @@ async fn test_long_term_staking_mechanics() {
     let base_apy = 1000; // 10% APY (basis points)
     let _lock_duration_days = 365; // 12 meses
     
-    // Calcular recompensas base
-    let daily_reward = (stake_amount * base_apy) / (10000 * 365);
-    let annual_reward = daily_reward * 365;
+    // Calcular recompensas base (ordem correta para evitar divisão por inteiro = 0)
+    let annual_reward = (stake_amount * base_apy) / 10000;
+    let daily_reward = annual_reward / 365;
     
     println!("   Stake: {} GMC", stake_amount / 1_000_000_000);
     println!("   APY Base: {}%", base_apy / 100);
@@ -83,7 +83,7 @@ async fn test_affiliate_system_mechanics() {
     println!("🧪 Teste: Sistema de Afiliados");
     
     let affiliate_volume = 100_000_000_000u64; // 100,000 GMC de volume
-    let commission_rates = [500, 300, 200, 100, 50, 25]; // Basis points por nível
+    let commission_rates = [400, 250, 150, 100, 50, 20]; // Basis points por nível (total: 9.7%)
     
     for (level, &rate) in commission_rates.iter().enumerate() {
         let commission = (affiliate_volume * rate as u64) / 10000;

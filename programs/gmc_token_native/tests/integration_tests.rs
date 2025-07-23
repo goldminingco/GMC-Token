@@ -274,6 +274,7 @@ async fn test_emergency_pause_and_resume() {
         burn_address: Pubkey::new_unique(),
         staking_pool: Pubkey::new_unique(),
         ranking_pool: Pubkey::new_unique(),
+        total_burned: 0, // ➕ Adicionar campo faltante
         is_initialized: true,
         is_paused: false,
     };
