@@ -1,0 +1,17 @@
+{
+  "auditFirm": "Trail of Bits (Recomendado)",
+  "estimatedCost": "$20,000 - $30,000 USD",
+  "timeline": "4-6 semanas",
+  "startDate": "2025-07-21",
+  "deliverables": [
+    "Relatório de auditoria completo",
+    "Lista de vulnerabilidades encontradas",
+    "Recomendações de correção",
+    "Certificado de auditoria",
+    "Relatório executivo"
+  ],
+  "contacts": {
+    "technical": "tech@gmc-ecosystem.com",
+    "business": "business@gmc-ecosystem.com"
+  }
+}

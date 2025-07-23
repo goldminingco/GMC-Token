@@ -18,6 +18,31 @@ Tokenomics e Mecânica de Staking – Gold Mining Token (GMC) Projeto: Gold Mini
 
 8. Fluxo de Ações do Usuário Stake, Burn-for-Boost, Claim, Withdraw, Emergency Unstake, Ações de Afiliado.
 
-9. Próximos Passos Desenvolvimento, Testes, Auditoria, Comunicação.
+9. Treasury Module (Sistema de Tesouro)
 
-10. Conclusão Implementação do GMC com staking, fees em USDT e programas de incentivo para sustentabilidade e crescimento.
+O Treasury Module é um componente crítico para a gestão financeira do ecossistema GMC Token, implementando governança financeira segura e distribuição automática de fundos.
+
+9.1 Sistema Multisig (3-de-N)
+Todas as transações financeiras significativas exigem aprovação de pelo menos 3 signatários autorizados, garantindo segurança e eliminação de pontos únicos de falha.
+
+9.2 Distribuição Automática de Fundos USDT
+O Treasury gerencia a distribuição automática de todos os fundos USDT coletados das taxas conforme a regra:
+- 40% para Equipe/Operações
+- 40% para Pool de Staking
+- 20% para Ranking/Premiações
+
+9.3 Controle de Emergência
+O sistema possui mecanismos de pausa de operações que podem ser ativados em situações críticas, exigindo aprovação multisig para reações rápidas a ameaças de segurança.
+
+9.4 Gestão de Propostas
+Ciclo completo de gerenciamento de transações:
+- Criação de proposta de transação
+- Coleta de assinaturas (mínimo 3 signatários autorizados)
+- Execução da transação aprovada
+- Registro transparente de todas as operações
+
+10. Próximos Passos Desenvolvimento, Testes, Auditoria, Comunicação.
+
+11. Conclusão Implementação do GMC com staking, fees em USDT e programas de incentivo para sustentabilidade e crescimento.
+
+11. Quema para quando o supply total atingir 12 milhões de GMC, ou seja, quando o GMC chegar a 12 milhões de GMC, a quema será interrompida. Aumetaremos a taxa de transação para 1% para manter o Pools alimentado.

@@ -6,7 +6,7 @@
 **Versão:** 1.0.0 (Pronto para Produção)  
 **Data:** Julho 2024  
 **Blockchain:** Solana  
-**Linguagem:** Rust (Anchor Framework v0.30.1)  
+**Linguagem:** Rust 
 
 ---
 
@@ -34,12 +34,18 @@
     *   **Staking Flexível:** Sem prazo, APY dinâmico de 5% a 70% via sistema de afiliados.
     *   Sistema de afiliados de 6 níveis com boost de até 50% no APY.
 
-3.  **Controle de Acesso e Governança**
+3.  **Sistema de Treasury Multisig**
+    *   **Governança Financeira:** Sistema multisig (3-de-N) para aprovação de transações.
+    *   **Distribuição Automatizada:** Divisão de fundos USDT (40% equipe, 40% staking, 20% ranking).
+    *   **Controle de Emergência:** Capacidade de pausar operações em situações críticas.
+    *   **Gestão de Propostas:** Sistema de propostas, assinaturas e execução de transações.
+
+4.  **Controle de Acesso e Funções Administrativas**
     *   Autoridades administrativas bem definidas.
     *   Time-locks para operações críticas no `RankingContract` (atualização de Merkle Root).
     *   Propriedade de contas e PDAs segura.
 
-4.  **Sistema de Ranking e Vesting**
+5.  **Sistema de Ranking e Vesting**
     *   **Ranking:** Premiação mensal (Top 7 em 3 categorias) e anual (Top 12) com exclusão dos Top 20 holders.
     *   **Vesting:** Cronogramas lineares para Equipe (2M) e Reserva Estratégica (10M) com cliff de 1 ano.
 
@@ -50,29 +56,29 @@
 ### 🔴 Prioridade Crítica
 
 #### 1. Segurança Aritmética
--   [x] **Overflow/Underflow Protection:** Validar uso rigoroso de `checked_*` em todas as operações.
--   [x] **Cálculos de Taxas e APY:** Precisão na distribuição de taxas (0.5%), penalidades e no cálculo complexo do APY dinâmico.
--   [x] **Validação de Limites:** Testes de unidade e integração cobrem valores extremos.
+-   [] **Overflow/Underflow Protection:** Validar uso rigoroso de `checked_*` em todas as operações.
+-   [] **Cálculos de Taxas e APY:** Precisão na distribuição de taxas (0.5%), penalidades e no cálculo complexo do APY dinâmico.
+-   [] **Validação de Limites:** Testes de unidade e integração cobrem valores extremos.
 
 #### 2. Controle de Acesso
--   [x] **Autorização de Funções:** Uso de `has_one` e `Signer` do Anchor em todas as funções restritas.
--   [x] **Segurança de PDAs:** Validação de seeds, bumps e prevenção de criação de contas maliciosas.
--   [x] **Time-lock Governance:** Revisar lógica de `propose/commit` para atualização de Merkle Root no `RankingContract`.
+-   [] **Autorização de Funções:** Uso de `has_one` e `Signer` do Anchor em todas as funções restritas.
+-   [] **Segurança de PDAs:** Validação de seeds, bumps e prevenção de criação de contas maliciosas.
+-   [] **Time-lock Governance:** Revisar lógica de `propose/commit` para atualização de Merkle Root no `RankingContract`.
 
 #### 3. Lógica de Negócio Complexa
--   [x] **Mecânica de Staking:** Validação de períodos de lock, penalidades e acúmulo de recompensas.
--   [x] **Sistema de Afiliados:** Revisar a lógica de travessia da árvore de 6 níveis e cálculo de boost para eficiência e prevenção de loops.
--   [x] **Distribuição de Recompensas:** Validar a lógica de distribuição dos pools e a correta aplicação do Merkle Tree para claims.
+-   [] **Mecânica de Staking:** Validação de períodos de lock, penalidades e acúmulo de recompensas.
+-   [] **Sistema de Afiliados:** Revisar a lógica de travessia da árvore de 6 níveis e cálculo de boost para eficiência e prevenção de loops.
+-   [] **Distribuição de Recompensas:** Validar a lógica de distribuição dos pools e a correta aplicação do Merkle Tree para claims.
 
 ### 🟡 Prioridade Alta
 
 #### 4. Reentrância e Cross-Program Invocations (CPI)
--   [x] **Proteção Automática do Anchor:** O framework já oferece proteção, mas a revisão das interações é crucial.
--   [x] **Interações entre Contratos:** Validar chamadas entre `StakingContract` e `RankingContract`.
+-   [] **Proteção Automática do Anchor:** O framework já oferece proteção, mas a revisão das interações é crucial.
+-   [] **Interações entre Contratos:** Validar chamadas entre `StakingContract` e `RankingContract`.
 
 #### 5. Validação de Entrada
--   [x] **Input Sanitization:** Validação rigorosa de todos os parâmetros de entrada em funções públicas.
--   [x] **Proteção contra Zero-Values:** Funções rejeitam valores de stake/burn iguais a zero.
+-   [] **Input Sanitization:** Validação rigorosa de todos os parâmetros de entrada em funções públicas.
+-   [] **Proteção contra Zero-Values:** Funções rejeitam valores de stake/burn iguais a zero.
 
 ---
 
@@ -90,9 +96,9 @@
 
 ### Análise Estática e Ambiente
 
--   [x] **Clippy Analysis:** ✅ Sem warnings críticos após auto-reparo.
--   [x] **Cargo Audit:** ✅ Sem vulnerabilidades conhecidas nas dependências diretas.
--   [x] **Dependency Check:** ✅ Todas as dependências principais estão com versões fixas e revisadas.
+-   [] **Clippy Analysis:** ✅ Sem warnings críticos após auto-reparo.
+-   [] **Cargo Audit:** ✅ Sem vulnerabilidades conhecidas nas dependências diretas.
+-   [] **Dependency Check:** ✅ Todas as dependências principais estão com versões fixas e revisadas.
 
 ---
 
@@ -100,36 +106,7 @@
 
 ### Pré-requisitos
 
-```bash
-# Rust toolchain
-rustc 1.75.0
 
-# Solana CLI
-solana-cli 1.18.x
-
-# Anchor Framework
-anchor-cli 0.30.1
-```
-
-### Setup do Projeto
-
-```bash
-# 1. Clone do repositório
-git clone https://github.com/goldminingco/GMC-Token.git
-cd GMC-Token
-
-# 2. Instalação de dependências
-npm install
-
-# 3. Verificação de saúde do ambiente (script customizado)
-./scripts/check_linter_health.sh
-
-# 4. Compilação dos contratos
-anchor build
-
-# 5. Execução de todos os testes
-npm run test:comprehensive
-```
 
 ### Ferramentas de Diagnóstico e Teste
 
@@ -146,11 +123,11 @@ npm run test:comprehensive
 
 ### ✅ Controles Implementados
 
--   [x] **Validação de Entrada:** Amounts > 0, PublicKeys, timestamps, limites de stake.
--   [x] **Controle de Acesso:** `authority` e `Signer` em todas as funções admin.
--   [x] **Aritmética Segura:** `checked_*` operations em todos os cálculos.
--   [x] **Gerenciamento de Estado:** Atualizações atômicas e validações de estado.
--   [x] **Proteção contra Self-Reference:** Prevenção de auto-referência no sistema de afiliados.
+-   [] **Validação de Entrada:** Amounts > 0, PublicKeys, timestamps, limites de stake.
+-   [] **Controle de Acesso:** `authority` e `Signer` em todas as funções admin.
+-   [] **Aritmética Segura:** `checked_*` operations em todos os cálculos.
+-   [] **Gerenciamento de Estado:** Atualizações atômicas e validações de estado.
+-   [] **Proteção contra Self-Reference:** Prevenção de auto-referência no sistema de afiliados.
 
 ### 🔍 Áreas para Revisão Especial
 
@@ -162,9 +139,9 @@ npm run test:comprehensive
 
 ## 🧪 Cenários de Teste Críticos
 
--   [x] **Teste de Stress:** Múltiplas operações simultâneas e com valores extremos.
--   [x] **Testes de Ataque:** Simulação de reentrância, front-running e ataques econômicos.
--   [x] **Testes de Regressão:** Garantia de que novas funcionalidades não quebram as existentes.
+-   [] **Teste de Stress:** Múltiplas operações simultâneas e com valores extremos.
+-   [] **Testes de Ataque:** Simulação de reentrância, front-running e ataques econômicos.
+-   [] **Testes de Regressão:** Garantia de que novas funcionalidades não quebram as existentes.
 
 ---
 
@@ -201,5 +178,5 @@ npm run test:comprehensive
 Este documento contém informações sensíveis sobre o projeto GMC Token. Todas as informações devem ser tratadas como confidenciais e utilizadas exclusivamente para fins de auditoria de segurança.
 
 **Versão do Documento:** 1.1 (Pronto para Auditoria)  
-**Última Atualização:** Julho 2024  
+**Última Atualização:** Julho 2025  
 **Próxima Revisão:** Pós-auditoria externa 

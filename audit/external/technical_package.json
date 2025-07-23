@@ -1,0 +1,34 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2025-07-19T16:25:00.392Z",
+  "programs": [
+    "programs/gmc_token/src/lib.rs",
+    "programs/gmc_staking/src/lib.rs",
+    "programs/gmc_ranking/src/lib.rs",
+    "programs/gmc_vesting/src/lib.rs",
+    "programs/gmc_treasury/src/lib.rs"
+  ],
+  "documentation": [
+    "README.md",
+    "docs/ARCHITECTURE.md",
+    "docs/SECURITY.md",
+    "docs/EXTERNAL_AUDIT_PLAN.md",
+    "SECURITY_AUDIT_CHECKLIST.md"
+  ],
+  "tests": [
+    "tests/gmc_ecosystem_e2e.test.ts",
+    "tests/security_tests.test.ts",
+    "tests/unit/"
+  ],
+  "security": [
+    "reports/security/",
+    "config/security_config.json",
+    "config/security_policy.json"
+  ],
+  "deployment": [
+    "Anchor.toml",
+    "scripts/deploy_ecosystem.ts",
+    "config/devnet.json",
+    "config/testnet.json"
+  ]
+}

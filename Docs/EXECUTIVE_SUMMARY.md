@@ -108,7 +108,6 @@ Entry Fees (USDT):
 ## 🔐 Security Framework
 
 ### Technical Security
-- **Anchor Framework**: Rust-based, type-safe
 - **Input Validation**: Todos os parâmetros validados
 - **Overflow Protection**: Checked arithmetic em operações críticas
 - **Access Control**: Role-based permissions

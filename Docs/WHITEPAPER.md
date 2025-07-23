@@ -6,7 +6,7 @@
 
 ## 📋 Sumário Executivo
 
-O GMC Token Ecosystem é uma plataforma DeFi inovadora construída na blockchain Solana que revoluciona o conceito de staking através de mecânicas de gamificação, sistema de afiliados multinível e governança descentralizada com time-locks. 
+O GMC Token Ecosystem é uma plataforma DeFi inovadora construída na blockchain Solana que revoluciona o conceito de staking através de mecânicas de gamificação e um sistema de afiliados multinível. 
 
 ### Visão
 Criar um ecossistema econômico sustentável onde os usuários são incentivados a participar ativamente através de staking de longo prazo, construção de comunidade e contribuição para a segurança e crescimento da rede.
@@ -25,14 +25,14 @@ O mercado DeFi tem experimentado crescimento exponencial, mas ainda enfrenta des
 - **Sustentabilidade**: Muitos protocolos oferecem APYs insustentáveis
 - **Centralização**: Concentração de poder em poucos holders
 - **Engagement**: Falta de incentivos para participação de longo prazo
-- **Transparência**: Governança opaca e mudanças súbitas
+- **Transparência**: Falta de clareza e mudanças súbitas nas regras dos protocolos.
 
 ### 1.2 Solução Proposta
 
 O GMC Token Ecosystem aborda esses desafios através de:
 
 1. **Tokenomics Sustentáveis**: Modelo deflacionário com burn automático
-2. **Governança Transparente**: Time-locks em mudanças críticas
+2. **Operações Transparentes**: Parâmetros críticos do contrato são imutáveis ou gerenciados de forma segura e auditável, garantindo previsibilidade.
 3. **Incentivos Alinhados**: Sistema de afiliados e burn-for-boost
 4. **Distribuição Justa**: Exclusão de grandes holders de recompensas
 
@@ -121,7 +121,7 @@ pub struct LongTermData {
 - **Time-Lock Governance**: Mudanças em Merkle Roots
 - **Exclusão de Whales**: Top 20 holders excluídos
 
-**Governança com Time-Lock:**
+
 ```rust
 #[account]
 pub struct RankingState {
@@ -444,7 +444,7 @@ Pool de Recompensas:
 
 ### 6.2 Time-Lock Governance
 
-#### 6.2.1 Processo de Governança
+#### 6.2.1 Gestão de Parâmetros do Contrato
 ```mermaid
 sequenceDiagram
     participant Admin
@@ -735,7 +735,7 @@ vs. Staking Tradicional:
 ├── APY superior (até 280% vs ~10%)
 ├── Mecânicas inovadoras (burn-for-boost)
 ├── Sistema de afiliados integrado
-└── Governança transparente
+└── Operações transparentes
 
 vs. Yield Farming:
 ├── Menor risco (single token)
@@ -790,48 +790,7 @@ vs. Yield Farming:
 
 ---
 
-## 🤝 10. Governança e Comunidade
 
-### 10.1 Estrutura de Governança
-
-#### 10.1.1 Modelo Híbrido
-```
-Governança GMC:
-├── Core Team: Desenvolvimento e operações
-├── Advisory Board: Direção estratégica
-├── Community Council: Representação da comunidade
-└── Token Holders: Votação em propostas
-```
-
-#### 10.1.2 Processo de Tomada de Decisão
-```mermaid
-graph TD
-    A[Proposta Submetida] --> B[Discussão Comunitária]
-    B --> C[Análise Técnica]
-    C --> D[Votação Preliminar]
-    D --> E{Aprovação > 60%?}
-    E -->|Sim| F[Time-lock 48h]
-    E -->|Não| G[Proposta Rejeitada]
-    F --> H[Implementação]
-    H --> I[Monitoramento]
-```
-
-### 10.2 Participação da Comunidade
-
-#### 10.2.1 Canais de Comunicação
-- **Discord**: Discussões técnicas e governança
-- **Telegram**: Notícias e updates
-- **Twitter**: Marketing e engajamento
-- **GitHub**: Desenvolvimento colaborativo
-- **Forum**: Propostas e debates longos
-
-#### 10.2.2 Programas de Incentivo
-- **Bug Bounty**: Recompensas por descoberta de bugs
-- **Ambassador Program**: Representantes regionais
-- **Developer Grants**: Funding para projetos
-- **Content Creator Program**: Incentivos para conteúdo
-
----
 
 ## 📚 11. Conclusão
 
@@ -840,7 +799,7 @@ graph TD
 O GMC Token Ecosystem introduz várias inovações significativas no espaço DeFi:
 
 1. **Burn-for-Boost Mechanism**: Primeira implementação de queima voluntária para aumento permanente de APY
-2. **Time-Lock Governance**: Transparência e segurança em mudanças administrativas
+2. **Segurança e Transparência**: Mecanismos que garantem a segurança e a previsibilidade das operações do contrato.
 3. **Sistema de Afiliados Integrado**: Incentivos alinhados para crescimento orgânico
 4. **Exclusão de Whales**: Promoção de descentralização através de exclusão de grandes holders
 5. **Tokenomics Sustentáveis**: Modelo deflacionário com múltiplas fontes de receita
@@ -849,13 +808,13 @@ O GMC Token Ecosystem introduz várias inovações significativas no espaço DeF
 
 #### 11.2.1 Para o Ecossistema Solana
 - Aumento da adoção através de APYs atrativos
-- Demonstração de governança transparente
+- Demonstração de operações transparentes e seguras
 - Inovação em mecânicas de staking
 - Crescimento da comunidade DeFi
 
 #### 11.2.2 Para a Comunidade
 - Oportunidades de rendimento passivo
-- Participação em governança descentralizada
+- Oportunidades de rendimento e crescimento na comunidade
 - Construção de redes de afiliados
 - Educação financeira e DeFi
 
@@ -878,7 +837,7 @@ O GMC Token Ecosystem introduz várias inovações significativas no espaço DeF
 O GMC Token Ecosystem visa se tornar um protocolo de referência no espaço DeFi, demonstrando que é possível criar sistemas financeiros descentralizados que são:
 
 - **Sustentáveis**: Através de tokenomics bem estruturadas
-- **Transparentes**: Através de governança aberta
+- **Transparentes**: Através de código-fonte aberto e auditável
 - **Inclusivos**: Através de baixas barreiras de entrada
 - **Inovadores**: Através de mecânicas únicas
 - **Seguros**: Através de práticas de segurança rigorosas
@@ -934,4 +893,4 @@ Este whitepaper é apenas para fins informativos e não constitui aconselhamento
 
 *Construído com ❤️ pela GMC Community*
 
-*Transformando a economia digital através de incentivos inteligentes e governança descentralizada.* 
+*Transformando a economia digital através de incentivos inteligentes e tecnologia segura.* 
