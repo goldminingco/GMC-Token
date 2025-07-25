@@ -20,11 +20,12 @@ echo
 PROGRAM_ID="55pd9gckYTZBuKb8HanYNBeMjAf7Z298qX6awqdEV3JM"
 TOKEN_MINT="48h1Nsg5vrpjtfWg5jHk3YwaVgvUSR7P9Ry2GEoBU8dv"
 
-echo -e "${YELLOW}📋 REQUISITOS A TESTAR:${NC}"
-echo -e "${CYAN}   • Tier 1: 0-999 GMC → \$1.00 USDT${NC}"
-echo -e "${CYAN}   • Tier 2: 1000-4999 GMC → \$2.50 USDT${NC}"
-echo -e "${CYAN}   • Tier 3: 5000-9999 GMC → \$5.00 USDT${NC}"
-echo -e "${CYAN}   • Tier 4: 10000+ GMC → \$10.00 USDT${NC}"
+echo -e "${YELLOW} REQUISITOS A TESTAR (TAXA PERCENTUAL - ATUALIZADO):${NC}"
+echo -e "${CYAN}   • Tier 1: Até 1.000 GMC → 10% do valor${NC}"
+echo -e "${CYAN}   • Tier 2: 1.001-10.000 GMC → 5% do valor${NC}"
+echo -e "${CYAN}   • Tier 3: 10.001-100.000 GMC → 2.5% do valor${NC}"
+echo -e "${CYAN}   • Tier 4: 100.001-500.000 GMC → 1% do valor${NC}"
+echo -e "${CYAN}   • Tier 5: Acima de 500.000 GMC → 0.5% do valor${NC}"
 echo -e "${CYAN}   • Distribuição USDT: 40% team, 40% staking, 20% ranking${NC}"
 echo
 
@@ -151,22 +152,31 @@ echo
 echo -e "${BLUE}🔧 Teste 3: Validação de Constantes do Código${NC}"
 echo "--------------------------------------------"
 
-# Verificar se as constantes estão corretas no código deployado
+# Verificar se as constantes de TAXA PERCENTUAL estão corretas no código deployado
 TOTAL_TESTS=$((TOTAL_TESTS + 1))
-if grep -q "TIER_1_USDT_FEE.*1_000_000" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/staking.rs; then
-    log_test "Constante Tier 1" "PASS" "\$1.00 USDT definido corretamente"
+if grep -q "TIER_1_FEE_PERCENT.*1000" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/staking.rs; then
+    log_test "Constante Tier 1 (10%)" "PASS" "10% (1000 basis points) definido corretamente"
     PASSED_TESTS=$((PASSED_TESTS + 1))
 else
-    log_test "Constante Tier 1" "FAIL" "Constante não encontrada ou incorreta"
+    log_test "Constante Tier 1 (10%)" "FAIL" "Constante não encontrada ou incorreta"
     FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 TOTAL_TESTS=$((TOTAL_TESTS + 1))
-if grep -q "TIER_2_USDT_FEE.*2_500_000" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/staking.rs; then
-    log_test "Constante Tier 2" "PASS" "\$2.50 USDT definido corretamente"
+if grep -q "TIER_2_FEE_PERCENT.*500" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/staking.rs; then
+    log_test "Constante Tier 2 (5%)" "PASS" "5% (500 basis points) definido corretamente"
     PASSED_TESTS=$((PASSED_TESTS + 1))
 else
-    log_test "Constante Tier 2" "FAIL" "Constante não encontrada ou incorreta"
+    log_test "Constante Tier 2 (5%)" "FAIL" "Constante não encontrada ou incorreta"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
+fi
+
+TOTAL_TESTS=$((TOTAL_TESTS + 1))
+if grep -q "TIER_5_FEE_PERCENT.*50" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/staking.rs; then
+    log_test "Constante Tier 5 (0.5%)" "PASS" "0.5% (50 basis points) definido corretamente"
+    PASSED_TESTS=$((PASSED_TESTS + 1))
+else
+    log_test "Constante Tier 5 (0.5%)" "FAIL" "Constante não encontrada ou incorreta"
     FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 

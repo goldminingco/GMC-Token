@@ -22,18 +22,29 @@ use solana_program::{
 use borsh::{BorshDeserialize, BorshSerialize};
 use crate::GMCError;
 
-// 🚀 OTIMIZAÇÃO: Import optimized modules
-use crate::staking_optimized::{
-    StakeRecordOptimized, 
-    calculate_dynamic_apy_optimized,
-    calculate_rewards_optimized,
-    GlobalStateOptimized,
-    CachedMetrics,
-    update_affiliate_network_optimized,
+// 🚀 OTIMIZAÇÃO: Módulos integrados diretamente no staking.rs
+
+// 🔥 LOOKUP TABLES PARA BOOST (integradas dos módulos removidos)
+const BURN_BOOST_LOOKUP: [u16; 256] = {
+    let mut lookup = [0u16; 256];
+    let mut i = 0;
+    while i < 256 {
+        // Boost progressivo: 0-50% baseado no nível de burn
+        lookup[i] = (i as u16 * 50) / 255; // 0% a 50% boost
+        i += 1;
+    }
+    lookup
 };
-use crate::zero_copy_optimization::{
-    ZeroCopyStakeRecord,
-    StrategicCacheManager,
+
+const AFFILIATE_BOOST_LOOKUP: [u16; 100] = {
+    let mut lookup = [0u16; 100];
+    let mut i = 0;
+    while i < 100 {
+        // Boost progressivo: 0-50% baseado no poder de afiliados
+        lookup[i] = (i as u16 * 50) / 99; // 0% a 50% boost
+        i += 1;
+    }
+    lookup
 };
 
 // 🚀 OPTIMIZED: Staking Pool Configuration with better memory layout
@@ -338,20 +349,25 @@ pub const FLEXIBLE_MAX_STAKE: u64 = 100_000 * 1_000_000_000; // 100,000 GMC
 // REGRA DE NEGÓCIO: Taxas em USDT baseadas na quantidade de GMC que será staked
 pub const USDT_DECIMALS: u8 = 6; // USDT padrão tem 6 decimais
 
-// Tier 1: 0-999 GMC -> $1.00 USDT
-pub const TIER_1_MAX_GMC: u64 = 999 * 1_000_000_000; // 999 GMC
-pub const TIER_1_USDT_FEE: u64 = 1_000_000; // $1.00 em micro-USDT (6 decimais)
+// 💰 TAXA PERCENTUAL DE ENTRADA NO STAKING (conforme requisitos originais)
+// Tier 1: Até 1.000 GMC -> 10%
+pub const TIER_1_MAX_GMC: u64 = 1_000 * 1_000_000_000; // 1.000 GMC
+pub const TIER_1_FEE_PERCENT: u64 = 1000; // 10% em basis points (10 * 100)
 
-// Tier 2: 1000-4999 GMC -> $2.50 USDT  
-pub const TIER_2_MAX_GMC: u64 = 4999 * 1_000_000_000; // 4999 GMC
-pub const TIER_2_USDT_FEE: u64 = 2_500_000; // $2.50 em micro-USDT
+// Tier 2: 1.001 a 10.000 GMC -> 5%
+pub const TIER_2_MAX_GMC: u64 = 10_000 * 1_000_000_000; // 10.000 GMC
+pub const TIER_2_FEE_PERCENT: u64 = 500; // 5% em basis points (5 * 100)
 
-// Tier 3: 5000-9999 GMC -> $5.00 USDT
-pub const TIER_3_MAX_GMC: u64 = 9999 * 1_000_000_000; // 9999 GMC
-pub const TIER_3_USDT_FEE: u64 = 5_000_000; // $5.00 em micro-USDT
+// Tier 3: 10.001 a 100.000 GMC -> 2,5%
+pub const TIER_3_MAX_GMC: u64 = 100_000 * 1_000_000_000; // 100.000 GMC
+pub const TIER_3_FEE_PERCENT: u64 = 250; // 2,5% em basis points (2.5 * 100)
 
-// Tier 4: 10000+ GMC -> $10.00 USDT
-pub const TIER_4_USDT_FEE: u64 = 10_000_000; // $10.00 em micro-USDT
+// Tier 4: 100.001 a 500.000 GMC -> 1%
+pub const TIER_4_MAX_GMC: u64 = 500_000 * 1_000_000_000; // 500.000 GMC
+pub const TIER_4_FEE_PERCENT: u64 = 100; // 1% em basis points (1 * 100)
+
+// Tier 5: Acima de 500.000 GMC -> 0,5%
+pub const TIER_5_FEE_PERCENT: u64 = 50; // 0,5% em basis points (0.5 * 100)
 
 // 💰 USDT Fee Distribution Percentages (conforme regras de negócio)
 pub const USDT_FEE_TO_TEAM_PERCENT: u8 = 40;
@@ -465,17 +481,33 @@ pub const FLEXIBLE_POOLS: [StakingPool; 3] = [
     },
 ];
 
-// 💰 Calculate USDT fee based on GMC staking amount tiers
-pub fn calculate_usdt_fee_by_amount(gmc_amount: u64) -> u64 {
-    if gmc_amount <= TIER_1_MAX_GMC {
-        TIER_1_USDT_FEE
+// 💰 Calculate USDT fee based on GMC staking amount (PERCENTAGE-BASED - OVERFLOW SAFE)
+pub fn calculate_usdt_fee_by_amount(gmc_amount: u64, usdt_price_per_gmc: u64) -> u64 {
+    let fee_percent = if gmc_amount <= TIER_1_MAX_GMC {
+        TIER_1_FEE_PERCENT // 10%
     } else if gmc_amount <= TIER_2_MAX_GMC {
-        TIER_2_USDT_FEE
+        TIER_2_FEE_PERCENT // 5%
     } else if gmc_amount <= TIER_3_MAX_GMC {
-        TIER_3_USDT_FEE
+        TIER_3_FEE_PERCENT // 2.5%
+    } else if gmc_amount <= TIER_4_MAX_GMC {
+        TIER_4_FEE_PERCENT // 1%
     } else {
-        TIER_4_USDT_FEE
-    }
+        TIER_5_FEE_PERCENT // 0.5%
+    };
+    
+    // Usar u128 para evitar overflow em cálculos grandes
+    let gmc_amount_u128 = gmc_amount as u128;
+    let usdt_price_u128 = usdt_price_per_gmc as u128;
+    let fee_percent_u128 = fee_percent as u128;
+    
+    // Calcula o valor em USDT do GMC staked (usando u128)
+    let gmc_value_in_usdt = (gmc_amount_u128 * usdt_price_u128) / 1_000_000_000;
+    
+    // Aplica a porcentagem (basis points: 10000 = 100%)
+    let fee_usdt = (gmc_value_in_usdt * fee_percent_u128) / 10000;
+    
+    // Retorna como u64 (seguro porque valores USDT são menores)
+    fee_usdt as u64
 }
 
 // 💰 Calculate USDT fee distribution
@@ -574,12 +606,12 @@ pub fn calculate_dynamic_apy_optimized_wrapper(
     // 🚀 OPTIMIZATION: Calculate components using lookup tables
     let base_apy = cache_manager.get_cache().get_base_apy(current_slot as u32);
     let burn_boost = if stake_type == "long-term" {
-        crate::staking_optimized::BURN_BOOST_LOOKUP[burn_power.min(255) as usize]
+        BURN_BOOST_LOOKUP[burn_power.min(255) as usize]
     } else {
         0
     };
-    let affiliate_boost = if (affiliate_power as usize) < crate::staking_optimized::AFFILIATE_BOOST_LOOKUP.len() {
-        crate::staking_optimized::AFFILIATE_BOOST_LOOKUP[affiliate_power as usize]
+    let affiliate_boost = if (affiliate_power as usize) < AFFILIATE_BOOST_LOOKUP.len() {
+        AFFILIATE_BOOST_LOOKUP[affiliate_power as usize]
     } else {
         0
     };
@@ -666,6 +698,7 @@ pub fn calculate_dynamic_apy_original(
 }
 
 // 🤝 Calculate affiliate power based on referral tree
+// 🎯 LÓGICA CORRETA: "EU CONVIDO → AMIGO FAZ STAKING → MEU APY AUMENTA"
 pub fn calculate_affiliate_power(referral_levels: Vec<(u8, u8)>) -> u8 {
     let mut total_power = 0u32;
     
@@ -685,6 +718,94 @@ pub fn calculate_affiliate_power(referral_levels: Vec<(u8, u8)>) -> u8 {
     msg!("🤝 Total Affiliate Power: {}%", final_power);
     
     final_power
+}
+
+// 🎯 NOVA FUNÇÃO: Calcular boost de afiliados baseado em staking ativo
+// "EU CONVIDO → AMIGO FAZ STAKING → MEU APY AUMENTA"
+pub fn calculate_affiliate_boost_from_active_staking(
+    referrer_pubkey: &Pubkey,
+    affiliate_stakes: Vec<(u8, u64, u8)> // (level, stake_amount, burn_power)
+) -> Result<u8, ProgramError> {
+    let mut total_boost = 0u32;
+    let mut active_affiliates = 0u16;
+    
+    msg!("🤝 Calculating affiliate boost for referrer: {}", referrer_pubkey);
+    
+    for (level, stake_amount, burn_power) in affiliate_stakes {
+        // 🛡️ Validação de segurança
+        if level == 0 || level > 6 {
+            msg!("🚨 Invalid affiliate level: {}", level);
+            continue;
+        }
+        
+        if stake_amount == 0 {
+            msg!("🚨 Affiliate has no active staking - skipping");
+            continue;
+        }
+        
+        // 🎯 REGRA PRINCIPAL: Só conta se o afiliado tem staking ativo
+        let level_percentage = AFFILIATE_LEVEL_PERCENTAGES.get((level - 1) as usize).unwrap_or(&0);
+        
+        // 🔥 Poder de mineração do afiliado (baseado em burn + stake)
+        let affiliate_mining_power = calculate_mining_power_from_stake(stake_amount, burn_power)?;
+        
+        // 🤝 Contribuição do afiliado para o boost do referrer
+        let level_contribution = (affiliate_mining_power as u32 * *level_percentage as u32) / 100;
+        total_boost = total_boost.saturating_add(level_contribution);
+        active_affiliates = active_affiliates.saturating_add(1);
+        
+        msg!("🤝 Level {} Affiliate: {}% of {} mining power = {} boost contribution", 
+             level, level_percentage, affiliate_mining_power, level_contribution);
+    }
+    
+    // 🛡️ Proteção anti-fraude: Mínimo de afiliados ativos
+    if active_affiliates < 2 {
+        msg!("🚨 Anti-fraud: Need at least 2 active affiliates for boost");
+        return Ok(0);
+    }
+    
+    // 🎯 Limitar boost máximo (50% para long-term)
+    let final_boost = std::cmp::min(total_boost, 50) as u8;
+    
+    msg!("🎉 Final Affiliate Boost: {}% from {} active affiliates", final_boost, active_affiliates);
+    
+    Ok(final_boost)
+}
+
+// 🔥 Calcular poder de mineração baseado em stake + burn
+pub fn calculate_mining_power_from_stake(stake_amount: u64, burn_power: u8) -> Result<u8, ProgramError> {
+    // 🛡️ Validação de entrada
+    if burn_power > 100 {
+        msg!("🚨 Invalid burn power: {}", burn_power);
+        return Err(ProgramError::Custom(crate::GMCError::InvalidAmount as u32));
+    }
+    
+    // 🎯 Fórmula: Poder base do stake + boost do burn
+    let base_power = match stake_amount {
+        0..=1_000_000 => 5,           // 1M GMC = 5% poder base
+        1_000_001..=10_000_000 => 15, // 10M GMC = 15% poder base
+        10_000_001..=50_000_000 => 30, // 50M GMC = 30% poder base
+        _ => 50,                       // 50M+ GMC = 50% poder base
+    };
+    
+    // 🔥 Boost adicional do burn (burn_power é percentual de GMC queimado)
+    let burn_boost = (burn_power as u16 * 50) / 100; // Máximo 50% boost do burn
+    
+    let total_power = base_power + burn_boost as u8;
+    let capped_power = std::cmp::min(total_power, 100);
+    
+    msg!("🔥 Mining Power: {}% base + {}% burn = {}% total", 
+         base_power, burn_boost, capped_power);
+    
+    Ok(capped_power)
+}
+
+// 🛡️ Verificar se afiliado tem staking ativo (proteção anti-fraude)
+pub fn affiliate_has_active_staking(affiliate_pubkey: &Pubkey) -> bool {
+    // TODO: Implementar verificação real da conta StakePosition
+    // Por enquanto, retorna true para testes
+    msg!("🔍 Checking active staking for affiliate: {}", affiliate_pubkey);
+    true // Placeholder - implementar verificação real
 }
 
 // 🔥 Calculate burn boost multiplier based on burned amount vs principal
@@ -898,8 +1019,10 @@ pub fn process_stake_original(
         return Err(ProgramError::MissingRequiredSignature);
     }
     
-    // 💰 Step 1: Calculate USDT entry fee based on GMC amount
-    let usdt_fee_required = calculate_usdt_fee_by_amount(amount);
+    // 💰 Step 1: Calculate USDT entry fee based on GMC amount (PERCENTAGE-BASED)
+    // Preço padrão: $0.10 por GMC (100_000 micro-USDT por GMC com 9 decimais)
+    let usdt_price_per_gmc = 100_000; // $0.10 em micro-USDT (6 decimais) por GMC
+    let usdt_fee_required = calculate_usdt_fee_by_amount(amount, usdt_price_per_gmc);
     let (team_fee, staking_fee, ranking_fee) = calculate_usdt_fee_distribution(usdt_fee_required);
     
     msg!("💰 USDT Entry Fee Analysis:");
@@ -1348,8 +1471,8 @@ pub fn process_burn_for_boost_optimized(
     
     // 🚀 OPTIMIZATION: Use lookup table for boost calculations
     let boost_level = (boost_multiplier / 100) as u8; // Convert to lookup index
-    let lookup_boost = if (boost_level as usize) < crate::staking_optimized::BURN_BOOST_LOOKUP.len() {
-        crate::staking_optimized::BURN_BOOST_LOOKUP[boost_level as usize]
+    let lookup_boost = if (boost_level as usize) < BURN_BOOST_LOOKUP.len() {
+        BURN_BOOST_LOOKUP[boost_level as usize]
     } else {
         boost_multiplier // Fallback to original value
     };

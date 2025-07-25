@@ -13,4 +13,5 @@ solana-program = "=1.17.31"
 borsh = "=0.9.3"
 
 [dev-dependencies]
-solana-program-test = "=1.17.31"
+# Removido solana-program-test para evitar conflitos de dependência
+# solana-program-test = "=1.17.31"
