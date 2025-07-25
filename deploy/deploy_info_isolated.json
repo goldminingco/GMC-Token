@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-07-24T21:48:30Z",
+  "network": "devnet",
+  "programId": "Ver output acima",
+  "deployerAddress": "E5yyb4sao4XN4aLaRNCrLUiTQ6ErXFtfGJ27FGiSjHo",
+  "artifactPath": "deploy/gmc_token_isolated.so",
+  "artifactSize": "32K",
+  "buildMethod": "Isolated Build + Solana 1.17.31",
+  "toolchain": "solana-isolated",
+  "rpcUrl": "https://api.devnet.solana.com",
+  "version": "isolated-compatible"
+}

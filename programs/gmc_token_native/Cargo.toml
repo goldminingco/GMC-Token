@@ -1,37 +1,16 @@
-cargo-features = ["edition2024"]
-
 [package]
 name = "gmc_token_native"
 version = "1.0.0"
-description = "GMC Token Native Rust Implementation - Security First"
-edition = "2024"
+edition = "2021"
 license = "MIT"
-publish = false
 
 [lib]
 crate-type = ["cdylib", "lib"]
 
-[features]
-default = []
-no-entrypoint = []
-test-sbf = []
-
 [dependencies]
-solana-program = { workspace = true }
-spl-token = { workspace = true }
-thiserror = { workspace = true }
-base64 = { workspace = true }
-serde = { workspace = true }
-bincode = { workspace = true }
-borsh = { workspace = true }
-num-traits = { workspace = true }
-num-derive = { workspace = true }
-
-# 🚀 ZERO-COPY SERIALIZATION FOR COMPUTE OPTIMIZATION
-bytemuck = { workspace = true }
-zerocopy = { workspace = true }
+# Versões específicas para máxima compatibilidade SBPF v1
+solana-program = "=1.17.31"
+borsh = "=0.9.3"
 
 [dev-dependencies]
-solana-program-test = { workspace = true }
-solana-sdk = { workspace = true }
-rand = "0.8.5"
+solana-program-test = "=1.17.31"
