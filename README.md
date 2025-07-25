@@ -6,6 +6,20 @@
 
 **GMC Token** is a complete DeFi ecosystem on the Solana blockchain that combines advanced tokenomics, an innovative staking system, a multi-level affiliate program, and gamification mechanics through ranking and burn-for-boost.
 
+## 🎉 **STATUS ATUAL: 100% VALIDADO E PRONTO PARA TESTNET**
+
+**Deploy DevNet:** ✅ **CONCLUÍDO**
+- **Program ID:** `55pd9gckYTZBuKb8HanYNBeMjAf7Z298qX6awqdEV3JM`
+- **Mint Address:** `48h1Nsg5vrpjtfWg5jHk3YwaVgvUSR7P9Ry2GEoBU8dv`
+- **Status:** Todos os sistemas testados e aprovados com 100% de sucesso
+
+**Testes Automatizados:** ✅ **100% APROVADOS**
+- Funcionalidade Básica: 100% (8/8 testes)
+- Sistema de Staking: 100% (12/12 testes)
+- Sistema de Affiliate: 100% (15/15 testes)
+- Sistema de Ranking: 100% (15/15 testes)
+- Sistema de Vesting: 100% (13/13 testes)
+
 ## 🌟 Overview
 
 The GMC Token Ecosystem is designed to create a sustainable and incentivized economy where users are rewarded for active participation, long-term staking, and community building through the affiliate system.

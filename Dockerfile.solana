@@ -1,0 +1,18 @@
+FROM solanalabs/rust:1.68.0
+
+# Instalar dependências necessárias
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Configurar ambiente Solana
+ENV PATH="/root/.local/share/solana/install/active_release/bin:$PATH"
+
+# Instalar versão específica do Solana CLI compatível
+RUN sh -c "$(curl -sSfL https://release.solana.com/v1.17.31/install)"
+
+WORKDIR /workspace
+
+# Comando padrão
+CMD ["bash"]

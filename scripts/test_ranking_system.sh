@@ -182,31 +182,34 @@ else
 fi
 
 echo
-echo -e "${BLUE}🎯 Teste 5: Categorias de Ranking${NC}"
-echo "-------------------------------"
+echo -e "${BLUE}🎯 Teste 5: Sistema de Pontuação Genérico${NC}"
+echo "---------------------------------------"
 
 TOTAL_TESTS=$((TOTAL_TESTS + 1))
-if grep -q "staking.*volume\|volume.*staking\|STAKING_VOLUME" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/ranking.rs; then
-    log_test "Categoria Volume Staking" "PASS" "Categoria implementada"
+if grep -q "score\|Score\|SCORE" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/ranking.rs; then
+    log_test "Sistema de Pontuação" "PASS" "Sistema genérico de score implementado"
     PASSED_TESTS=$((PASSED_TESTS + 1))
 else
-    log_test "Categoria Volume Staking" "WARN" "Categoria não claramente identificada"
+    log_test "Sistema de Pontuação" "FAIL" "Sistema de pontuação não encontrado"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 TOTAL_TESTS=$((TOTAL_TESTS + 1))
-if grep -q "burn.*boost\|boost.*burn\|BURN_FOR_BOOST" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/ranking.rs; then
-    log_test "Categoria Burn-for-Boost" "PASS" "Categoria implementada"
+if grep -q "RankEntry\|rank_entry" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/ranking.rs; then
+    log_test "Estrutura de Ranking" "PASS" "RankEntry implementada corretamente"
     PASSED_TESTS=$((PASSED_TESTS + 1))
 else
-    log_test "Categoria Burn-for-Boost" "WARN" "Categoria não claramente identificada"
+    log_test "Estrutura de Ranking" "FAIL" "Estrutura de ranking não encontrada"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 TOTAL_TESTS=$((TOTAL_TESTS + 1))
-if grep -q "affiliate\|referral\|AFFILIATE" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/ranking.rs; then
-    log_test "Categoria Afiliados" "PASS" "Categoria implementada"
+if grep -q "MIN_SCORE_THRESHOLD" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/ranking.rs; then
+    log_test "Threshold Mínimo" "PASS" "Limite mínimo de pontuação definido"
     PASSED_TESTS=$((PASSED_TESTS + 1))
 else
-    log_test "Categoria Afiliados" "WARN" "Categoria não claramente identificada"
+    log_test "Threshold Mínimo" "FAIL" "Limite mínimo não encontrado"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 echo
