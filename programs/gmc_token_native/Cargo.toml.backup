@@ -1,0 +1,15 @@
+[package]
+name = "gmc_token_native"
+version = "1.0.0"
+edition = "2021"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+solana-program = "1.18.0"
+borsh = "0.10"
+
+[dev-dependencies]
+solana-program-test = "1.18.0"

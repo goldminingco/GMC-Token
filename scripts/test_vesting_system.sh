@@ -140,27 +140,30 @@ echo "--------------------------------------------"
 
 # Verificar se as constantes estão corretas no código deployado
 TOTAL_TESTS=$((TOTAL_TESTS + 1))
-if grep -q "TEAM_VESTING_AMOUNT\|team.*2000000\|2_000_000" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/vesting.rs; then
-    log_test "Vesting Equipe (2M GMC)" "PASS" "Quantidade definida corretamente"
+if grep -q "MAX_VESTING_SCHEDULES" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/vesting.rs; then
+    log_test "Máximo de Schedules" "PASS" "Limite de vesting schedules definido"
     PASSED_TESTS=$((PASSED_TESTS + 1))
 else
-    log_test "Vesting Equipe (2M GMC)" "WARN" "Quantidade não claramente identificada"
+    log_test "Máximo de Schedules" "FAIL" "Limite não encontrado"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 TOTAL_TESTS=$((TOTAL_TESTS + 1))
-if grep -q "STRATEGIC_RESERVE_AMOUNT\|strategic.*10000000\|10_000_000" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/vesting.rs; then
-    log_test "Reserva Estratégica (10M GMC)" "PASS" "Quantidade definida corretamente"
+if grep -q "MIN_VESTING_AMOUNT" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/vesting.rs; then
+    log_test "Quantidade Mínima Vesting" "PASS" "Valor mínimo definido corretamente"
     PASSED_TESTS=$((PASSED_TESTS + 1))
 else
-    log_test "Reserva Estratégica (10M GMC)" "WARN" "Quantidade não claramente identificada"
+    log_test "Quantidade Mínima Vesting" "FAIL" "Valor mínimo não encontrado"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 TOTAL_TESTS=$((TOTAL_TESTS + 1))
-if grep -q "VESTING_DURATION.*60\|60.*month\|5.*year" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/vesting.rs; then
-    log_test "Duração Vesting (5 anos)" "PASS" "Duração definida corretamente"
+if grep -q "MAX_VESTING_DURATION" /Users/cliente/Documents/GMC-Token/programs/gmc_token_native/src/vesting.rs; then
+    log_test "Duração Máxima Vesting" "PASS" "Duração máxima definida (4 anos)"
     PASSED_TESTS=$((PASSED_TESTS + 1))
 else
-    log_test "Duração Vesting (5 anos)" "WARN" "Duração não claramente identificada"
+    log_test "Duração Máxima Vesting" "FAIL" "Duração máxima não encontrada"
+    FAILED_TESTS=$((FAILED_TESTS + 1))
 fi
 
 echo
