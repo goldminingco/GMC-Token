@@ -1,0 +1,58 @@
+{
+  "name": "GMC Token",
+  "symbol": "GMC",
+  "description": "Gold Mining Co Token - Revolutionary blockchain-based gold mining ecosystem. The token that is worth gold! GMC represents real gold production with up to 5% profitability based on physical gold mining operations. Features include gold-backed staking, affiliate rewards system, transparent mining operations, and decentralized finance capabilities. Each token is backed by real gold mining activities with full blockchain traceability and security.",
+  "image": "https://raw.githubusercontent.com/goldminingco/GMC-Token/main/assets/gmc-logo.png",
+  "external_url": "https://goldmining.co/en/",
+  "attributes": [
+    {
+      "trait_type": "Total Supply",
+      "value": "100,000,000"
+    },
+    {
+      "trait_type": "Decimals",
+      "value": "9"
+    },
+    {
+      "trait_type": "Type",
+      "value": "Gold-Backed Utility Token"
+    },
+    {
+      "trait_type": "Blockchain",
+      "value": "Solana"
+    },
+    {
+      "trait_type": "Backing",
+      "value": "Physical Gold Mining"
+    },
+    {
+      "trait_type": "Use Case",
+      "value": "DeFi Staking & Gold Mining"
+    },
+    {
+      "trait_type": "Features",
+      "value": "Staking, Affiliate System, Ranking, Treasury"
+    },
+    {
+      "trait_type": "Profitability",
+      "value": "Up to 5% based on real gold production"
+    },
+    {
+      "trait_type": "Security",
+      "value": "Blockchain-secured gold operations"
+    },
+    {
+      "trait_type": "Transparency",
+      "value": "Real-time mining dashboard"
+    }
+  ],
+  "properties": {
+    "files": [
+      {
+        "uri": "https://raw.githubusercontent.com/goldminingco/GMC-Token/main/assets/gmc-logo.png",
+        "type": "image/png"
+      }
+    ],
+    "category": "image"
+  }
+}
