@@ -2,7 +2,7 @@
   "name": "GMC Gold Mining",
   "symbol": "GMC",
   "description": "Gold Mining: your portal for gold purchasing with blockchain technology. The token that is worth gold! GMC represents real gold production with up to 5% profitability based on physical gold mining operations. Discover our gold mining RWA tokens and gold-backed tokens - simple, fast, and secure. Transform Gold into Real Profitability with blockchain-integrated dashboard, staking rewards, affiliate system, and complete transparency. Each token is backed by real gold mining activities with full traceability.",
-  "image": "https://raw.githubusercontent.com/goldminingco/GMC-Token/main/assets/gmc-logo.png",
+  "image": "https://raw.githubusercontent.com/goldminingco/GMC-Token/main/img/icone.png",
   "external_url": "https://goldmining.co/en/",
   "attributes": [
     {
@@ -49,7 +49,7 @@
   "properties": {
     "files": [
       {
-        "uri": "https://raw.githubusercontent.com/goldminingco/GMC-Token/main/assets/gmc-logo.png",
+        "uri": "https://raw.githubusercontent.com/goldminingco/GMC-Token/main/img/icone.png",
         "type": "image/png"
       }
     ],
