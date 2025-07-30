@@ -404,18 +404,12 @@ pub fn process_initialize(
 mod tests {
     use super::*;
     use solana_program::{clock::Epoch, pubkey::Pubkey};
-    use solana_sdk::account::Account;
+    use solana_program::account_info::AccountInfo;
 
     // Helper function to create a mock account
     #[allow(dead_code)]
-    fn create_account(lamports: u64, space: usize, owner: &Pubkey) -> Account {
-        Account {
-            lamports,
-            data: vec![0; space],
-            owner: *owner,
-            executable: false,
-            rent_epoch: Epoch::default(),
-        }
+    fn create_mock_account_info(lamports: u64, space: usize, owner: &Pubkey) -> (Pubkey, u64, Vec<u8>) {
+        (*owner, lamports, vec![0; space])
     }
 
     #[test]

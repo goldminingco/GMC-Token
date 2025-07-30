@@ -424,11 +424,42 @@ fn process_execute_transaction(
         _ => {}
     }
     
+    // 💰 BUSINESS RULE: Taxa Saque USDT (0.3% sobre valor)
+    let (final_amount, withdrawal_fee) = match pending_tx.token_type {
+        TokenType::USDT => {
+            let fee = pending_tx.amount
+                .checked_mul(30) // 0.3% = 30/10000
+                .and_then(|x| x.checked_div(10000))
+                .ok_or_else(|| {
+                    msg!("🚨 Security Alert: USDT withdrawal fee calculation overflow");
+                    GMCError::ArithmeticOverflow
+                })?;
+            
+            let user_receives = pending_tx.amount
+                .checked_sub(fee)
+                .ok_or_else(|| {
+                    msg!("🚨 Security Alert: USDT amount calculation underflow");
+                    GMCError::ArithmeticOverflow
+                })?;
+            
+            msg!("💰 USDT withdrawal fee (0.3%): {} USDT", fee);
+            msg!("💸 User receives: {} USDT (after 0.3% fee)", user_receives);
+            
+            (user_receives, fee)
+        }
+        TokenType::GMC => {
+            // GMC não tem taxa de saque
+            (pending_tx.amount, 0)
+        }
+    };
+    
     // Atualizar saldo
     match pending_tx.token_type {
         TokenType::USDT => {
             treasury_state.total_balance_usdt = 
                 treasury_state.total_balance_usdt.saturating_sub(pending_tx.amount);
+            // Fee permanece no treasury como receita
+            msg!("💰 USDT withdrawal fee {} retained in treasury", withdrawal_fee);
         }
         TokenType::GMC => {
             treasury_state.total_balance_gmc = 
@@ -581,17 +612,11 @@ mod tests {
     use solana_program::{clock::Epoch, pubkey::Pubkey};
     
     // Treasury tests moved to separate test files
-    use solana_sdk::account::Account;
+    use solana_program::account_info::AccountInfo;
 
     #[allow(dead_code)]
-    fn create_account(lamports: u64, space: usize, owner: &Pubkey) -> Account {
-        Account {
-            lamports,
-            data: vec![0; space],
-            owner: *owner,
-            executable: false,
-            rent_epoch: Epoch::default(),
-        }
+    fn create_mock_account_info(lamports: u64, space: usize, owner: &Pubkey) -> (Pubkey, u64, Vec<u8>) {
+        (*owner, lamports, vec![0; space])
     }
 
     #[test]

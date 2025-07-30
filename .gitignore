@@ -40,3 +40,52 @@ solana-tools.tar.bz2
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# 🚨 SECURITY: PRIVATE KEYS AND SENSITIVE FILES
+# Never commit private keys, wallets, or sensitive configuration
+*.json
+!package.json
+!package-lock.json
+!assets/gmc-metadata.json
+!config/network-config.json
+!tsconfig.json
+!jsconfig.json
+
+# Wallet directories
+.devnet-keys/
+.testnet-keys/
+.mainnet-keys/
+.testnet-wallets/
+.devnet-wallets/
+.mainnet-wallets/
+
+# Private keys and secrets
+*private*
+*secret*
+*keypair*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Environment files
+.env*
+!.env.example
+
+# Backup files
+*backup*
+*.bak
+*.backup
+
+# Temporary files
+temp_*
+tmp_*
+*.tmp
+
+# Security reports and sensitive data
+security_report_*
+validation_report_*
+audit_*
+
+# Documentação Interna
+/Docs/

@@ -11,6 +11,7 @@ crate-type = ["cdylib", "lib"]
 # Versões específicas para máxima compatibilidade SBPF v1
 solana-program = "=1.17.31"
 borsh = "=0.9.3"
+spl-token = { version = "=3.5.0", features = ["no-entrypoint"] }
 
 [dev-dependencies]
 # Removido solana-program-test para evitar conflitos de dependência

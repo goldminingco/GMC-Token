@@ -1,58 +1,34 @@
 {
-  "name": "GMC Gold Mining",
+  "name": "Gold Mining",
   "symbol": "GMC",
-  "description": "Gold Mining: your portal for gold purchasing with blockchain technology. The token that is worth gold! GMC represents real gold production with up to 5% profitability based on physical gold mining operations. Discover our gold mining RWA tokens and gold-backed tokens - simple, fast, and secure. Transform Gold into Real Profitability with blockchain-integrated dashboard, staking rewards, affiliate system, and complete transparency. Each token is backed by real gold mining activities with full traceability.",
-  "image": "https://raw.githubusercontent.com/goldminingco/GMC-Token/main/img/icone.png",
+  "description": "Gold Mining: your portal for gold purchasing with blockchain technology. The token that is worth gold! GMC represents real gold production with up to 5% profitability based on physical gold mining operations.",
+  "image": "https://raw.githubusercontent.com/goldminingco/GMC-Token/main/assets/gmc-logo.png",
   "external_url": "https://goldmining.co/en/",
   "attributes": [
     {
-      "trait_type": "Total Supply",
-      "value": "100,000,000"
-    },
-    {
-      "trait_type": "Decimals",
-      "value": "9"
-    },
-    {
       "trait_type": "Type",
-      "value": "Gold-Backed Utility Token"
+      "value": "Utility Token"
     },
     {
       "trait_type": "Blockchain",
       "value": "Solana"
     },
     {
-      "trait_type": "Backing",
-      "value": "Physical Gold Mining"
+      "trait_type": "Total Supply",
+      "value": "100,000,000"
     },
     {
-      "trait_type": "Use Case",
-      "value": "DeFi Staking & Gold Mining"
-    },
-    {
-      "trait_type": "Features",
-      "value": "Staking, Affiliate System, Ranking, Treasury"
-    },
-    {
-      "trait_type": "Profitability",
-      "value": "Up to 5% based on real gold production"
-    },
-    {
-      "trait_type": "Security",
-      "value": "Blockchain-secured gold operations"
-    },
-    {
-      "trait_type": "Transparency",
-      "value": "Real-time mining dashboard"
+      "trait_type": "Decimals",
+      "value": 9
     }
   ],
   "properties": {
     "files": [
       {
-        "uri": "https://raw.githubusercontent.com/goldminingco/GMC-Token/main/img/icone.png",
+        "uri": "https://raw.githubusercontent.com/goldminingco/GMC-Token/main/assets/gmc-logo.png",
         "type": "image/png"
       }
     ],
-    "category": "image"
+    "category": "ft"
   }
 }

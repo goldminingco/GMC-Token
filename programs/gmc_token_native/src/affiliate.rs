@@ -25,7 +25,7 @@ pub const MIN_STAKE_FOR_AFFILIATE: u64 = 1_000_000; // 1M tokens minimum
 pub const ANTI_SYBIL_COOLDOWN: i64 = 86400; // 24 hours in seconds
 
 // 🚀 OPTIMIZED: Affiliate Level Configuration with better memory layout
-#[derive(BorshSerialize, BorshDeserialize, Debug, Clone)]
+#[derive(BorshSerialize, BorshDeserialize, Debug, Clone, Default, Copy)]
 #[repr(C)] // 🚀 OPTIMIZATION: Explicit memory layout
 pub struct AffiliateLevelConfig {
     pub min_volume_required: u64,          // 8 bytes - most accessed field first
