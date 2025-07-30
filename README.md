@@ -1,76 +1,100 @@
-# GMC Token - Gold Mining Ecosystem 🪙
+# Gold Mining Token (GMC) - The Solana DeFi Ecosystem 🪙
 
 ![GMC Logo](assets/gmc-logo.png)
 
-## O Ecossistema de Staking Revolucionário na Solana
+**GMC Token is not just a digital asset; it's a complete Decentralized Finance (DeFi) ecosystem built on the Solana blockchain. Our mission is to democratize access to passive income through a transparent, secure, and highly rewarding staking system, backed by a deflationary tokenomics model designed for long-term sustainability.**
 
-**O GMC Token não é apenas um token, é um ecossistema completo de Finanças Descentralizadas (DeFi) construído na blockchain Solana. Nosso objetivo é democratizar o acesso à renda passiva através de um sistema de staking transparente, seguro e altamente recompensador, apoiado por um modelo de tokenomics deflacionário.**
-
----
-
-### 🔗 **Links de Transparência Total**
-
-- **Token (GMC):** [`AUz16jzWuxSpZ3aKANmpocxWUUG6w5qDd1hiGnoUFMXb`](https://solscan.io/token/AUz16jzWuxSpZ3aKANmpocxWUUG6w5qDd1hiGnoUFMXb)
-- **Smart Contract Principal:** [`4Pq7MMWfUSWQ8inc9XsKvMXM1NjkkQHV9QE4dr6b61US`](https://solscan.io/account/4Pq7MMWfUSWQ8inc9XsKvMXM1NjkkQHV9QE4dr6b61US)
-- **Website Oficial:** [goldmining.co](https://goldmining.co/en/)
+This repository contains the official Rust-based smart contracts for the GMC Token ecosystem, developed with a security-first approach following DevSecOps and TDD best practices.
 
 ---
 
-## 🚀 **Benefícios e Módulos do Ecossistema**
+### 🔗 **Total Transparency Links**
 
-Nosso ecossistema é composto por smart contracts interconectados que oferecem uma experiência DeFi completa e robusta:
-
-### 1. 🏦 **Staking Inteligente com APY Dinâmico**
-- **Staking de Longo Prazo (12 meses):** Recompensas de **10% a 280% APY**. Ideal para investidores de longo prazo.
-- **Staking Flexível:** Recompensas de **5% a 70% APY** sem período de bloqueio.
-- **Segurança:** 70% do supply total (70M GMC) está trancado no contrato de staking para garantir o pagamento das recompensas.
-
-### 2. 🔥 **Burn-for-Boost: Aumente seus Ganhos**
-- Queime uma pequena quantidade de GMC para **aumentar seu APY em até 270%** no Staking de Longo Prazo. Um mecanismo poderoso para recompensar os investidores mais comprometidos.
-
-### 3. 🤝 **Sistema de Afiliados Multi-Nível**
-- Ganhe recompensas passivas convidando novos usuários. Nosso sistema de 6 níveis oferece um **boost de até 50% no seu APY**, criando um poderoso efeito de rede.
-
-### 4. 🏛️ **Tesouraria (Treasury) e Governança**
-- **12 Milhões de GMC** trancados em um contrato multisig para garantir a segurança e a governança descentralizada dos fundos do projeto.
-
-### 5. ⏰ **Vesting para a Equipe e Reserva Estratégica**
-- **12 Milhões de GMC** (Equipe + Reserva) trancados em contratos de vesting com liberação gradual, garantindo o compromisso de longo prazo e a estabilidade do token.
-
-### 6. 🏆 **Programa de Ranking e Recompensas**
-- Um sistema competitivo que recompensa os melhores desempenhos da comunidade (maiores stakers, recrutadores, etc.) com prêmios mensais e anuais.
-
-### 7. 📉 **Tokenomics Deflacionário**
-- Uma **taxa de 0.5%** em todas as transferências é redistribuída:
-  - **50% é queimado (burn)**, reduzindo o supply total.
-  - **40% vai para o pool de staking**, recompensando os stakers.
-  - **10% vai para o programa de ranking**, incentivando a competição.
+- **Token Address (GMC):** [`AUz16jzWuxSpZ3aKANmpocxWUUG6w5qDd1hiGnoUFMXb`](https://solscan.io/token/AUz16jzWuxSpZ3aKANmpocxWUUG6w5qDd1hiGnoUFMXb)
+- **Main Smart Contract:** [`4Pq7MMWfUSWQ8inc9XsKvMXM1NjkkQHV9QE4dr6b61US`](https://solscan.io/account/4Pq7MMWfUSWQ8inc9XsKvMXM1NjkkQHV9QE4dr6b61US)
+- **Official Website:** [goldmining.co](https://goldmining.co/en/)
 
 ---
 
-## 📊 **Distribuição dos Tokens (Mainnet)**
+## 🚀 Ecosystem Modules & Benefits: A Deep Dive
 
-Para máxima transparência, aqui está a distribuição pública dos fundos na mainnet:
+Our ecosystem is a suite of interconnected smart contracts, each designed to deliver specific value and synergize with the others.
 
-| Fundo | Endereço Público (Wallet) |
+### 1. 🏦 **Intelligent Staking with Dynamic APY**
+The core of our ecosystem is a sophisticated staking system that caters to different investor profiles.
+
+-   **Long-Term Staking (12-Month Lock):**
+    -   **High Rewards:** Earn a dynamic APY ranging from a base of **10% up to an incredible 280%**.
+    -   **Ideal For:** Long-term believers in the project who want to maximize their returns.
+    -   **Daily Payouts:** Rewards are calculated and distributed daily.
+    -   **Minimum Stake:** 100 GMC.
+
+-   **Flexible Staking (No Lock-in):**
+    -   **Flexibility:** Earn a solid APY from **5% up to 70%** without locking your tokens.
+    -   **Ideal For:** Investors who want passive income with the freedom to withdraw at any time.
+    -   **30-Day Cycles:** Rewards are paid out in 30-day cycles.
+    -   **Minimum Stake:** 50 GMC.
+
+-   **Security:** To guarantee reward payouts, **70,000,000 GMC (70% of the total supply)** is securely locked in the smart contract's PDA, controlled only by the program's logic.
+
+### 2. 🔥 **Burn-for-Boost: Amplify Your APY**
+This is one of our key innovations, allowing committed users to significantly increase their earning potential.
+
+-   **Mechanism:** By burning a small amount of GMC, you permanently increase the APY on your **Long-Term Staking** positions.
+-   **Powerful Incentive:** This feature allows you to boost your base APY by an additional **270%**, creating a path to reach the maximum 280% APY.
+-   **Deflationary Impact:** Every use of this feature contributes to reducing the total supply of GMC, increasing its scarcity and value.
+
+### 3. 🤝 **Multi-Level Affiliate System**
+We believe in community growth and reward our users for helping expand the ecosystem.
+
+-   **Passive Income Stream:** Earn a percentage of the rewards generated by the users you refer, across **6 levels of depth**.
+-   **APY Boost:** An active referral network can boost your own staking APY by up to **50%**.
+-   **Network Effect:** This system is designed to create exponential community growth, benefiting all token holders.
+
+### 4. 🏛️ **Secure Treasury & Governance**
+The financial health and governance of the project are secured on-chain.
+
+-   **Multisig Security:** **12,000,000 GMC** are locked in a multisignature treasury contract, requiring multiple approvals for any transaction.
+-   **Decentralized Control:** This prevents unilateral decisions and ensures that funds are managed securely and transparently, according to the project's roadmap and governance proposals.
+
+### 5. ⏰ **Vesting for Team & Strategic Reserve**
+To ensure long-term alignment and project stability, funds for the team and strategic reserve are managed by smart contracts.
+
+-   **Locked Funds:** **12,000,000 GMC** (2M for the Team, 10M for the Strategic Reserve) are locked in vesting contracts.
+-   **Gradual Release:** Funds are released on a pre-defined schedule with cliff periods, guaranteeing the team's long-term commitment.
+
+### 6. 📉 **Deflationary Tokenomics**
+The GMC token is designed to become scarcer over time.
+
+-   **Automatic Burn:** A **0.5% fee** is applied to every GMC transfer. **50% of this fee is permanently burned**.
+-   **Sustainable Rewards:** The remaining fee is redistributed to fuel the ecosystem:
+    -   **40% to the Staking Pool**, ensuring a continuous flow of rewards for stakers.
+    -   **10% to the Ranking Program**, rewarding community engagement.
+
+---
+
+## 📊 **Mainnet Token Distribution**
+
+For maximum transparency, below are the public addresses for the main funds. The majority of the supply is held in Program Derived Addresses (PDAs), controlled by the smart contract's logic, not a single person.
+
+| Fund | Public Address |
 |---|---|
-| **Staking Rewards Pool (70M GMC)** | `5EGhNNXm91UZSAUpj3qtmiAPM8JDFztkbqnXxBziHMq1` |
-| **Treasury (12M GMC)** | `4Qr5wBt7J243VDSCiTHgXUSxZpGWUJA1MiXx2DrsBgMv` |
+| **Staking Rewards Pool (70M GMC)** | `5EGhNNXm91UZSAUpj3qtmiAPM8JDFztkbqnXxBziHMq1` (PDA) |
+| **Treasury & Strategic Reserve (12M GMC)** | `4Qr5wBt7J243VDSCiTHgXUSxZpGWUJA1MiXx2DrsBgMv` (PDA) |
 | **Presale (8M GMC)** | `8Sjs8HkDzuDGQdFZnR1NfQs5eujJbBFCmcUpEnLNtG5J` |
 | **Marketing (6M GMC)** | `dVan4q1sLhcAte5RGyp5KXr9X9mung296Y998CKiHTb` |
-| **Team (2M GMC)** | `8mStzLX9S28pydomkmPd9Yop4LXLJWn9sEdxg5qJwy7L` |
+| **Team Vesting (2M GMC)** | `8mStzLX9S28pydomkmPd9Yop4LXLJWn9sEdxg5qJwy7L` (PDA) |
 | **Airdrop (2M GMC)** | `DEX9sqfg2kPArZsRHtJAYrL3DV629YJsYysqGP58u77j` |
 
-*Nota: Os fundos de Staking, Treasury e Team estão em contas de programa (PDAs) controladas pelo smart contract principal para garantir a segurança e a automação.*
+---
+
+## 🛠️ **Getting Started**
+
+1.  **Add the GMC Token** to your preferred Solana wallet (Phantom, Solflare, etc.) using the token address.
+2.  **Acquire GMC tokens** on supported exchanges (coming soon).
+3.  **Visit our official dApp** (coming soon) to participate in the staking ecosystem.
+4.  **Follow our social channels** for the latest updates and announcements.
 
 ---
 
-## 🛠️ **Como Começar**
-
-1. **Adicione o token GMC** à sua carteira Solana usando o endereço do token.
-2. **Participe do nosso ecossistema** através do nosso website (em breve).
-3. **Fique atualizado** seguindo nossas redes sociais.
-
----
-
-**GMC Token: Transformando Ouro em Lucratividade Real com a Segurança da Blockchain.**
+**GMC Token: Transforming Gold Mining into Real Profitability with the Security and Transparency of the Blockchain.**
