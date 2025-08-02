@@ -78,6 +78,10 @@ pub enum GMCError {
     TransferFeeTooHigh = 0x1025,
     InvalidPoolId = 0x1026,
     RankingInactive = 0x1027,
+    // 🔐 SECURITY: Mint authority revocation errors
+    MintAuthorityAlreadyRevoked = 0x1028,
+    OnlyDeployerCanRevokeMint = 0x1029,
+    MintRevokedCannotMint = 0x1030,
 }
 
 // 🔄 Implementar conversão para ProgramError (necessário para ?)
@@ -114,6 +118,10 @@ impl From<GMCError> for ProgramError {
             GMCError::TransferFeeTooHigh => ProgramError::InvalidArgument,
             GMCError::InvalidPoolId => ProgramError::InvalidArgument,
             GMCError::RankingInactive => ProgramError::InvalidArgument,
+            // 🔐 SECURITY: Mint authority revocation error mappings
+            GMCError::MintAuthorityAlreadyRevoked => ProgramError::Custom(0x1028),
+            GMCError::OnlyDeployerCanRevokeMint => ProgramError::MissingRequiredSignature,
+            GMCError::MintRevokedCannotMint => ProgramError::Custom(0x1030),
         }
     }
 }
@@ -125,6 +133,8 @@ entrypoint!(process_instruction);
 pub enum GMCInstruction {
     Initialize { initial_supply: u64 },
     Transfer { amount: u64 },
+    // 🔐 CRITICAL SECURITY: Revoke mint authority permanently
+    RevokeMintAuthority,
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
@@ -142,6 +152,8 @@ pub struct GlobalState {
     pub ecosystem_wallets: EcosystemWallets,
     pub is_initialized: bool,
     pub burn_stopped: bool, // Para quando atingir 12M GMC
+    // 🔐 SECURITY: Track if mint authority has been permanently revoked
+    pub mint_authority_revoked: bool,
 }
 
 // 🔥 Estrutura para Distribuição da Taxa de Transferência
@@ -169,6 +181,10 @@ pub fn process_instruction(
             msg!("GMC Token: Transfer amount {}", amount);
             process_transfer(accounts, amount)
         }
+        GMCInstruction::RevokeMintAuthority => {
+            msg!("🔐 GMC Token: REVOKING MINT AUTHORITY PERMANENTLY");
+            process_revoke_mint_authority(accounts)
+        }
     }
 }
 
@@ -194,10 +210,75 @@ pub fn process_initialize(
     global_state.total_supply = initial_supply;
     global_state.admin = *admin_account.key;
     global_state.is_initialized = true;
+    // 🔐 SECURITY: Initialize mint authority as not revoked
+    global_state.mint_authority_revoked = false;
     
     global_state.serialize(&mut &mut global_state_account.data.borrow_mut()[..])?;
     
     msg!("GMC Token initialized successfully with supply: {}", initial_supply);
+    Ok(())
+}
+
+/// 🔐 CRITICAL SECURITY: Revoke mint authority permanently
+/// This function removes the mint authority from the GMC token, making it impossible
+/// to create new tokens beyond the initial 100M supply
+pub fn process_revoke_mint_authority(
+    accounts: &[AccountInfo],
+) -> ProgramResult {
+    let account_info_iter = &mut accounts.iter();
+    let global_state_account = next_account_info(account_info_iter)?;
+    let mint_account = next_account_info(account_info_iter)?;
+    let current_authority_account = next_account_info(account_info_iter)?;
+    let token_program_account = next_account_info(account_info_iter)?;
+    
+    // 🛡️ SECURITY: Only the current deployer can revoke mint authority
+    if !current_authority_account.is_signer {
+        return Err(GMCError::OnlyDeployerCanRevokeMint.into());
+    }
+    
+    let mut global_state = GlobalState::try_from_slice(&global_state_account.data.borrow())?;
+    
+    // 🛡️ SECURITY: Verify caller is the admin/deployer
+    if *current_authority_account.key != global_state.admin {
+        return Err(GMCError::OnlyDeployerCanRevokeMint.into());
+    }
+    
+    // 🛡️ SECURITY: Check if mint authority already revoked
+    if global_state.mint_authority_revoked {
+        return Err(GMCError::MintAuthorityAlreadyRevoked.into());
+    }
+    
+    // 🔐 CRITICAL: Revoke mint authority by setting it to None/null
+    // This uses SPL Token instruction to set mint authority to None
+    let revoke_instruction = spl_token::instruction::set_authority(
+        token_program_account.key,
+        mint_account.key,
+        None, // Set authority to None (revoke)
+        spl_token::instruction::AuthorityType::MintTokens,
+        current_authority_account.key,
+        &[],
+    )?;
+    
+    // Execute the revocation instruction
+    let account_infos = vec![
+        mint_account.clone(),
+        current_authority_account.clone(),
+        token_program_account.clone(),
+    ];
+    
+    solana_program::program::invoke(
+        &revoke_instruction,
+        &account_infos,
+    )?;
+    
+    // 🔐 SECURITY: Mark mint authority as permanently revoked in our state
+    global_state.mint_authority_revoked = true;
+    global_state.serialize(&mut &mut global_state_account.data.borrow_mut()[..])?;
+    
+    msg!("🔐 CRITICAL SECURITY: MINT AUTHORITY PERMANENTLY REVOKED");
+    msg!("🔐 No new GMC tokens can be created beyond the 100M supply");
+    msg!("🔐 This action is IRREVERSIBLE");
+    
     Ok(())
 }
 

@@ -78,6 +78,7 @@ mod transfer_fee_tests {
             },
             is_initialized: true,
             burn_stopped: false,
+            mint_authority_revoked: false,
         };
         
         let transfer_amount = 2_000_000_000_000_000; // 2M GMC
@@ -167,6 +168,7 @@ mod transfer_fee_tests {
             },
             is_initialized: true,
             burn_stopped: false,
+            mint_authority_revoked: false,
         }
     }
 }

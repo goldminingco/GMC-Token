@@ -172,6 +172,7 @@ mod security_tests {
             },
             is_initialized: true,
             burn_stopped: false,
+            mint_authority_revoked: false,
         }
     }
 

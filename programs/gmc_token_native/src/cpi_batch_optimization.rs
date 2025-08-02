@@ -10,6 +10,7 @@ use solana_program::{
     msg,
 };
 use spl_token::instruction as token_instruction;
+use borsh::BorshDeserialize;
 
 // 🚀 BATCH STRUCTURES: Optimized for minimal memory allocation
 
@@ -193,6 +194,18 @@ impl<'a> OptimizedBatchProcessor<'a> {
     ) -> Result<u64, ProgramError> {
         if self.mint_batch.is_empty() {
             return Ok(0);
+        }
+        
+        // 🔐 CRITICAL SECURITY: Check if mint authority has been revoked
+        // This prevents any minting after the authority has been revoked
+        use crate::{GlobalState, GMCError};
+        if let Some(global_state_account) = accounts.get(0) {
+            if let Ok(global_state) = GlobalState::try_from_slice(&global_state_account.data.borrow()) {
+                if global_state.mint_authority_revoked {
+                    msg!("🚨 SECURITY: Mint attempt blocked - authority has been revoked");
+                    return Err(GMCError::MintRevokedCannotMint.into());
+                }
+            }
         }
         
         let batch_size = self.mint_batch.len();
